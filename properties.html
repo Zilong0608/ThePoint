@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一点房产 · THE POINT</title>
+<meta name="description" content="一点房产 — 高端别墅、海景豪宅与城市顶层公寓的臻选清单。">
+<link rel="icon" href="media/logo.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html"><img src="media/logo.svg" alt="THE POINT 一点"></a>
+  <nav class="nav">
+    <a href="index.html">首页<span class="en">Home</span></a>
+    <a class="active" href="properties.html">一点房产<span class="en">Estate</span></a>
+    <a href="experts.html">一点专家<span class="en">Experts</span></a>
+    <a href="news.html">一点资讯<span class="en">Journal</span></a>
+    <a href="partners.html">一点伙伴<span class="en">Partners</span></a>
+    <a class="btn btn--ghost nav-cta" href="index.html#contact">预约洽谈</a>
+  </nav>
+  <button class="burger" aria-label="菜单"><span></span><span></span><span></span></button>
+</header>
+<div class="mobile-nav">
+  <button class="close" aria-label="关闭">&times;</button>
+  <a href="index.html">首页 Home</a>
+  <a href="properties.html">一点房产 Estate</a>
+  <a href="experts.html">一点专家 Experts</a>
+  <a href="news.html">一点资讯 Journal</a>
+  <a href="partners.html">一点伙伴 Partners</a>
+  <a class="btn btn--ghost" href="index.html#contact">预约洽谈</a>
+</div>
+
+<section class="page-top" style="padding-bottom:36px">
+  <div class="wrap">
+    <p class="eyebrow line reveal">The Collection</p>
+    <h1 class="display reveal d1">一点房产</h1>
+    <div class="divider center reveal d1"></div>
+    <p class="lead-dim reveal d2" style="max-width:52ch;margin:0 auto">每一处皆经一点亲自甄选，于此开启您的下一段栖居。</p>
+  </div>
+</section>
+
+<!-- ===== SEARCH BAR ===== -->
+<section style="padding-bottom:20px">
+  <div class="wrap">
+    <form class="searchbar reveal">
+      <div class="search-grid">
+        <div class="field"><label>城市 · City</label><select><option>所有城市</option><option>Auckland</option><option>Wellington</option><option>Queenstown</option><option>Christchurch</option></select></div>
+        <div class="field"><label>地区 · Suburb</label><select><option>所有地区</option><option>Albany</option><option>Dairy Flat</option><option>Kumeu</option><option>Remuera</option></select></div>
+        <div class="field"><label>类型 · Type</label><select><option>所有类型</option><option>别墅 / House</option><option>公寓 / Apartment</option><option>联排 / Townhouse</option><option>地产 / Land</option></select></div>
+        <div class="field"><label>Open Home</label><select><option>不限</option><option>本周末</option><option>下周末</option><option>仅预约</option></select></div>
+        <div class="field"><label>卧室数 · Beds</label><div class="row"><select><option>不限</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5+</option></select><span>至</span><select><option>不限</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div></div>
+        <div class="field"><label>浴室数 · Baths</label><div class="row"><select><option>不限</option><option>1</option><option>2</option><option>3</option><option>4+</option></select><span>至</span><select><option>不限</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div></div>
+        <div class="field"><label>预期价格 · Price</label><div class="row"><input type="text" placeholder="不限"><span>至</span><input type="text" placeholder="不限"></div></div>
+        <div class="field" style="grid-column:span 2"><label>关键词或地址 · Keyword</label><input type="text" placeholder="输入关键词或地址"></div>
+      </div>
+      <div class="search-actions"><button type="submit" class="btn btn--solid">搜&nbsp;&nbsp;索</button></div>
+    </form>
+  </div>
+</section>
+
+<!-- ===== RESULTS ===== -->
+<section class="pad-sm" style="padding-top:30px">
+  <div class="wrap">
+    <div class="toolbar reveal">
+      <p class="count">共 <b>63</b> 套臻选房源</p>
+      <div class="tools">
+        <select><option>最新上架</option><option>价格：由高至低</option><option>价格：由低至高</option><option>推荐优先</option></select>
+        <div class="viewtoggle">
+          <button class="on"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>网格</button>
+          <button><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10" width="18" height="3"/><rect x="3" y="16" width="18" height="3"/></svg>列表</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lgrid">
+
+      <article class="lcard reveal">
+        <div class="ltop"><span>Contact Agent</span><b>价格待询</b></div>
+        <div class="lphoto" style="background-image:url('media/prop-albany-1.jpg')"></div>
+        <div class="lbody">
+          <div class="lrow"><h3>Albany</h3>
+            <div class="lspecs">
+              <span><svg viewBox="0 0 24 24"><path d="M3 12V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M3 12h18M3 12v6M21 12v6M6 12V9h5v3"/></svg>1</span>
+              <span><svg viewBox="0 0 24 24"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3zM7 12V6a2 2 0 0 1 4 0"/></svg>1</span>
+              <span><svg viewBox="0 0 24 24"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13M5 13h14v4H5zM7 17v2M17 17v2"/></svg>1</span>
+            </div>
+          </div>
+          <p class="laddr">104, 22 Library Lane, Albany</p>
+        </div>
+      </article>
+
+      <article class="lcard reveal d1">
+        <div class="ltop"><span>Contact Agent</span><b>价格待询</b></div>
+        <div class="lphoto" style="background-image:url('media/prop-albany-2.jpg')"></div>
+        <div class="lbody">
+          <div class="lrow"><h3>Albany</h3>
+            <div class="lspecs">
+              <span><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V9l9-6 9 6v10a2 2 0 0 1-2 2h-4M9 21v-6h6v6"/></svg>192m²</span>
+            </div>
+          </div>
+          <p class="laddr">20 &amp; 22 Waihou Crescent, Albany</p>
+        </div>
+      </article>
+
+      <article class="lcard reveal d2">
+        <div class="ltop"><span>Contact Agent</span><b>价格待询</b></div>
+        <div class="lphoto" style="background-image:url('media/prop-dairyflat.jpg')"></div>
+        <div class="lbody">
+          <div class="lrow"><h3>Dairy Flat</h3>
+            <div class="lspecs">
+              <span><svg viewBox="0 0 24 24"><path d="M3 12V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M3 12h18M3 12v6M21 12v6M6 12V9h5v3"/></svg>4</span>
+              <span><svg viewBox="0 0 24 24"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3zM7 12V6a2 2 0 0 1 4 0"/></svg>3</span>
+              <span><svg viewBox="0 0 24 24"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13M5 13h14v4H5zM7 17v2M17 17v2"/></svg>3</span>
+              <span><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V9l9-6 9 6v10a2 2 0 0 1-2 2h-4M9 21v-6h6v6"/></svg>3.5ha</span>
+            </div>
+          </div>
+          <p class="laddr">65 Lascelles Drive, Dairy Flat</p>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="center" style="margin-top:54px"><a class="btn" href="#">加载更多</a></div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="wrap reveal">
+    <p class="eyebrow line">Bespoke Search</p>
+    <h2 class="display">未见心仪之选？</h2>
+    <p>告诉一点您的期待，我们将为您私人甄选未公开上市的臻品房源。</p>
+    <a class="btn btn--solid" href="index.html#contact">预约私人甄选</a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand"><img src="media/logo.svg" alt="THE POINT 一点"><p>一点 The Point — 为少数人甄选的高端房产与城市生活。</p></div>
+      <div><h4>导览</h4><a href="index.html">首页</a><a href="properties.html">一点房产</a><a href="experts.html">一点专家</a><a href="news.html">一点资讯</a><a href="partners.html">一点伙伴</a></div>
+      <div><h4>服务</h4><a href="#">高端置业</a><a href="#">资产出售</a><a href="#">私人顾问</a><a href="partners.html">合作伙伴</a></div>
+      <div><h4>联系</h4><p>contact@thepoint.com</p><p>+64 9 000 0000</p><p>Level 1, Harbour Tower<br>Auckland CBD</p></div>
+    </div>
+  </div>
+  <div class="footer-bottom"><span>© 2026 THE POINT 一点. 版权所有.</span><span>隐私政策 · 服务条款</span></div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
