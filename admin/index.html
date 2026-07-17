@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 · THE POINT 一点</title>
+<link rel="icon" href="../media/logo.svg">
+<style>
+:root{
+  --paper:#F4F2EC;--paper-soft:#EBE7DD;--card:#FFFFFF;--line:#E2DDD1;
+  --ink-1:#201F1B;--ink-2:#57534A;--ink-3:#928D82;
+  --accent:#9A8763;--accent-deep:#7B6A49;--espresso:#26241F;--danger:#A04A40;
+  --sans:'Noto Sans SC',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  --serif:'Noto Serif SC','Songti SC',Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);color:var(--ink-1);font-family:var(--sans);font-size:15px;line-height:1.7}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--sans);cursor:pointer}
+input,select,textarea{font-family:var(--sans);font-size:14.5px;color:var(--ink-1);background:var(--paper);border:1px solid var(--line);padding:10px 12px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:.5em;font-size:13px;letter-spacing:.12em;padding:10px 22px;border:1px solid var(--ink-1);background:transparent;color:var(--ink-1);transition:.3s}
+.btn:hover{background:var(--ink-1);color:var(--paper)}
+.btn--solid{background:var(--espresso);color:#EFE9DA;border-color:var(--espresso)}
+.btn--solid:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+.btn--sm{padding:5px 12px;font-size:12.5px}
+.btn--danger{border-color:var(--danger);color:var(--danger)}
+.btn--danger:hover{background:var(--danger);color:#fff}
+
+/* login */
+#login-view{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-card{background:var(--card);border:1px solid var(--line);padding:50px 44px;width:380px;max-width:92vw;box-shadow:0 30px 70px -40px rgba(0,0,0,.35)}
+.login-card img{height:54px;margin:0 auto 10px;display:block}
+.login-card h1{font-family:var(--serif);font-size:22px;text-align:center;margin-bottom:26px;letter-spacing:.1em}
+.login-card input{margin-bottom:14px}
+.err{color:var(--danger);font-size:13px;min-height:20px;margin-bottom:6px}
+
+/* layout */
+#app-view{display:none;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--espresso);color:#D8D2C4;flex:none;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sidebar .logo{padding:26px 24px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar .logo img{height:40px}
+.sidebar nav{flex:1;padding:10px 0;overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+.sidebar nav a{display:flex;justify-content:space-between;align-items:center;padding:9px 24px;font-size:14px;letter-spacing:.08em;color:#B9B2A2;transition:.25s;border-left:2px solid transparent}
+.sidebar nav a:hover{color:#fff;background:rgba(255,255,255,.04)}
+.sidebar nav a.on{color:#fff;border-left-color:var(--accent);background:rgba(255,255,255,.06)}
+.badge{background:var(--accent-deep);color:#fff;font-size:11px;padding:1px 8px;border-radius:10px}
+.sidebar .foot{flex:none;padding:14px 24px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#8F897B;background:var(--espresso)}
+.sidebar .foot a{color:#B9B2A2;display:block;padding:4px 0}
+.sidebar .foot a:hover{color:#fff}
+.main{flex:1;padding:36px 44px;min-width:0}
+.main h2{font-family:var(--serif);font-size:26px;letter-spacing:.06em;margin-bottom:4px}
+.sub{color:var(--ink-3);font-size:13.5px;margin-bottom:26px}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px}
+
+/* stats */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:18px;margin-bottom:34px}
+.stat-card{background:var(--card);border:1px solid var(--line);padding:22px 24px}
+.stat-card .n{font-family:var(--serif);font-size:34px;color:var(--accent-deep)}
+.stat-card .l{color:var(--ink-2);font-size:13.5px;letter-spacing:.06em}
+
+/* table */
+.tablewrap{background:var(--card);border:1px solid var(--line);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:500;text-align:left;color:var(--ink-3);font-size:12.5px;letter-spacing:.12em;padding:13px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--line-soft,#EFEBE1);vertical-align:middle}
+tr:hover td{background:var(--paper-soft)}
+.thumb{width:64px;height:44px;object-fit:cover;border:1px solid var(--line);display:block}
+.thumb.round{width:44px;height:44px;border-radius:50%}
+.tag{display:inline-block;font-size:12px;padding:2px 10px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.tag.green{border-color:#7d9471;color:#5d7a52}
+.tag.red{border-color:var(--danger);color:var(--danger)}
+.rowbtns{display:flex;gap:8px;white-space:nowrap}
+.empty{padding:50px;text-align:center;color:var(--ink-3)}
+
+/* modal */
+#modal-bg{display:none;position:fixed;inset:0;background:rgba(32,31,27,.5);z-index:50;overflow-y:auto;padding:40px 16px}
+#modal-bg.open{display:flex;align-items:flex-start;justify-content:center}
+.modal{background:var(--card);border:1px solid var(--line);width:760px;max-width:100%;padding:36px 40px;margin:auto 0}
+.modal h3{font-family:var(--serif);font-size:21px;margin-bottom:22px;letter-spacing:.06em}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+.fgrid .full{grid-column:1/-1}
+.f label{display:block;font-size:12.5px;letter-spacing:.08em;color:var(--ink-3);margin-bottom:5px}
+.modal .actions{display:flex;justify-content:flex-end;gap:12px;margin-top:26px}
+.imgs{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.imgs .im{position:relative;width:104px;height:72px;border:1px solid var(--line)}
+.imgs .im img{width:100%;height:100%;object-fit:cover}
+.imgs .im .x{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:0;font-size:12px;line-height:1}
+.upl{border:1px dashed var(--accent);background:rgba(154,135,99,.06);color:var(--accent-deep);padding:10px;text-align:center;font-size:13px;cursor:pointer;margin-top:8px}
+.upl:hover{background:rgba(154,135,99,.14)}
+.chk{display:flex;align-items:center;gap:8px}
+.chk input{width:auto}
+.msgcard{background:var(--card);border:1px solid var(--line);padding:20px 24px;margin-bottom:14px}
+.msgcard.unread{border-left:3px solid var(--accent)}
+.msgcard .mh{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.msgcard .who{font-weight:500}
+.msgcard .meta{color:var(--ink-3);font-size:12.5px}
+.msgcard p{color:var(--ink-2);font-size:14.5px;white-space:pre-wrap}
+@media(max-width:860px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap;align-items:center}
+  .sidebar nav{display:flex;flex-wrap:wrap;padding:0}
+  .sidebar .logo{border:0;padding:14px 18px}
+  .sidebar .foot{border:0;margin-left:auto}
+  .main{padding:22px 16px}
+  .fgrid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 登录 ===== -->
+<div id="login-view">
+  <div class="login-card">
+    <img src="../media/logo.svg" alt="THE POINT">
+    <h1>管理后台</h1>
+    <form id="login-form">
+      <input name="username" placeholder="账号" required autocomplete="username">
+      <input name="password" type="password" placeholder="密码" required autocomplete="current-password">
+      <div class="err" id="login-err"></div>
+      <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center">登&nbsp;录</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== 主界面 ===== -->
+<div id="app-view">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="logo"><img src="../media/logo.svg" alt="THE POINT"></div>
+      <nav id="menu">
+        <a data-tab="dashboard" class="on">概览</a>
+        <a data-tab="properties">房源管理</a>
+        <a data-tab="agents">专家管理</a>
+        <a data-tab="news">资讯管理</a>
+        <a data-tab="videos">视频管理</a>
+        <a data-tab="schools">学校信息</a>
+        <a data-tab="partners">伙伴管理</a>
+        <a data-tab="services">服务名录</a>
+        <a data-tab="users">用户管理</a>
+        <a data-tab="vendors">入驻审核 <span class="badge" id="vp-badge" style="display:none">0</span></a>
+        <a data-tab="posts">内容审核 <span class="badge" id="pp-badge" style="display:none">0</span></a>
+        <a data-tab="sections">板块管理</a>
+        <a data-tab="categories">分类管理</a>
+        <a data-tab="suburbs">地区管理</a>
+        <a data-tab="subscribers">订阅邮箱</a>
+        <a data-tab="enquiries">客户留言 <span class="badge" id="unread-badge" style="display:none">0</span></a>
+        <a data-tab="logs">操作日志</a>
+        <a data-tab="settings">设置</a>
+      </nav>
+      <div class="foot">
+        <span id="who"></span>
+        <a href="../index.html" target="_blank">查看网站 →</a>
+        <a id="logout" href="#">退出登录</a>
+      </div>
+    </aside>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<!-- ===== 弹窗 ===== -->
+<div id="modal-bg"><div class="modal" id="modal"></div></div>
+
+<script src="../demo.js"></script>
+<script>
+(function () {
+'use strict';
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(url, opts) {
+  if (window.DEMO_API) return window.DEMO_API(url, opts); // 静态演示模式(GitHub Pages)
+  const res = await fetch(url, opts);
+  if (res.status === 401) { showLogin(); throw new Error('登录已过期,请重新登录'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `请求失败 (${res.status})`);
+  return data;
+}
+const post = (u, b) => api(u, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(b) });
+const put  = (u, b) => api(u, { method: 'PUT',  headers: {'Content-Type':'application/json'}, body: JSON.stringify(b) });
+const del  = u => api(u, { method: 'DELETE' });
+
+async function uploadFiles(files) {
+  const fd = new FormData();
+  Array.from(files).forEach(f => fd.append('files', f));
+  const data = await api('/api/admin/upload', { method: 'POST', body: fd });
+  return data.files.map(f => '../' + f); // 存相对站点根的路径,前台直接可用
+}
+// 存库时用站点根相对路径(不带 ../)
+const toSitePath = p => String(p || '').replace(/^\.\.\//, '');
+const toAdminPath = p => { p = String(p || ''); return p && !/^(https?:)?\/\//.test(p) && !p.startsWith('../') ? '../' + p : p; };
+
+/* ================= 登录 ================= */
+function showLogin() { $('#login-view').style.display = 'flex'; $('#app-view').style.display = 'none'; }
+function showApp(username) {
+  $('#login-view').style.display = 'none'; $('#app-view').style.display = 'block';
+  $('#who').textContent = username ? `当前:${username}` : '';
+  go('dashboard');
+}
+$('#login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  try {
+    const r = await post('/api/admin/login', { username: f.get('username'), password: f.get('password') });
+    $('#login-err').textContent = '';
+    showApp(r.username);
+  } catch (err) { $('#login-err').textContent = err.message; }
+});
+$('#logout').addEventListener('click', async e => { e.preventDefault(); await post('/api/admin/logout', {}); showLogin(); });
+
+/* ================= 通用 Schema ================= */
+let agentsCache = [];
+const SCHEMAS = {
+  properties: {
+    title: '房源管理', api: '/api/admin/properties', addLabel: '+ 新增房源',
+    columns: r => `
+      <td>${r.cover ? `<img class="thumb" src="${esc(toAdminPath(r.cover))}">` : ''}</td>
+      <td><b>${esc(r.title)}</b><br><span style="color:var(--ink-3);font-size:12.5px">${esc(r.address)}</span></td>
+      <td>${esc(r.suburb)}${r.suburb && r.city ? ', ' : ''}${esc(r.city)}</td>
+      <td>${esc(r.price_label)}</td>
+      <td><span class="tag ${r.status === '在售' ? 'green' : r.status === '下架' ? 'red' : ''}">${esc(r.status)}</span>${r.featured ? ' <span class="tag">推荐</span>' : ''}</td>
+      <td>${esc(r.agent ? r.agent.name : '—')}</td>`,
+    heads: ['图片', '标题 / 地址', '区域', '价格', '状态', '负责专家'],
+    fields: [
+      { k: 'title', l: '标题 *', full: 1 },
+      { k: 'title_en', l: 'Title (EN,可空)', full: 1 },
+      { k: 'address', l: '地址', full: 1 },
+      { k: 'suburb', l: '地区 Suburb(从列表选,或直接输入新地区)', type: 'suburb' }, { k: 'city', l: '城市 City' },
+      { k: 'type', l: '类型(可手动输入)', type: 'combo', opts: ['别墅 / House', '公寓 / Apartment', '联排 / Townhouse', '地产 / Land', '商业 / Commercial'] },
+      { k: 'status', l: '状态', type: 'select', opts: ['在售', '已售', '下架'] },
+      { k: 'price_label', l: '价格显示(如 价格待询 / $1,280,000)' },
+      { k: 'price_value', l: '价格数值(仅用于筛选排序,可空)', type: 'number' },
+      { k: 'beds', l: '卧室', type: 'number' }, { k: 'baths', l: '浴室', type: 'number' },
+      { k: 'garages', l: '车位', type: 'number' },
+      { k: 'land_area', l: '土地面积(如 3.5ha / 650m²)' },
+      { k: 'floor_area', l: '室内面积' },
+      { k: 'open_home', l: 'Open Home(如 周六 1:00-1:30pm,留空则无)' },
+      { k: 'tour_url', l: '3D 看房链接(Matterport / Kuula 等嵌入链接,留空不显示)', full: 1 },
+      { k: 'agent_id', l: '负责专家', type: 'agent' },
+      { k: 'featured', l: '首页推荐', type: 'check' },
+      { k: 'description', l: '详细介绍', type: 'textarea', rows: 6, full: 1 },
+      { k: 'description_en', l: 'Description (EN,可空)', type: 'textarea', rows: 4, full: 1 },
+      { k: 'images', l: '房源图片(可多张,第一张为封面)', type: 'images', full: 1 }
+    ]
+  },
+  agents: {
+    title: '专家管理', api: '/api/admin/agents', addLabel: '+ 新增专家',
+    columns: r => `
+      <td>${r.photo ? `<img class="thumb round" src="${esc(toAdminPath(r.photo))}">` : ''}</td>
+      <td><b>${esc(r.name)}</b></td>
+      <td>${esc(r.category)}</td>
+      <td>${esc(r.phone)}<br><span style="color:var(--ink-3);font-size:12.5px">${esc(r.email)}</span></td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>
+      <td>${esc(r.sort_order)}</td>`,
+    heads: ['照片', '姓名', '类别', '联系方式', '状态', '排序'],
+    fields: [
+      { k: 'name', l: '姓名 *' },
+      { k: 'category', l: '类别(可手动输入新类别)', type: 'combo', opts: ['地产', '金融', '租务', '法务', '其他'] },
+      { k: 'email', l: '邮箱' }, { k: 'phone', l: '电话' },
+      { k: 'wechat', l: '微信号' }, { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'visible', l: '在前台显示', type: 'check' },
+      { k: 'photo', l: '照片', type: 'image', full: 1 },
+      { k: 'bio', l: '个人简介', type: 'textarea', rows: 4, full: 1 },
+      { k: 'bio_en', l: 'Bio (EN,可空)', type: 'textarea', rows: 3, full: 1 }
+    ]
+  },
+  news: {
+    title: '资讯管理', api: '/api/admin/news', addLabel: '+ 新增文章',
+    columns: r => `
+      <td>${r.image ? `<img class="thumb" src="${esc(toAdminPath(r.image))}">` : ''}</td>
+      <td><b>${esc(r.title)}</b></td>
+      <td style="white-space:nowrap">${esc((r.published_at || '').slice(0, 16))}</td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '已发布' : '隐藏'}</span></td>`,
+    heads: ['图片', '标题', '发布时间', '状态'],
+    fields: [
+      { k: 'title', l: '标题 *', full: 1 },
+      { k: 'title_en', l: 'Title (EN,可空)', full: 1 },
+      { k: 'source_note', l: '来源说明(如 内容来源于网络,一点编辑于…)', full: 1 },
+      { k: 'published_at', l: '发布时间(如 2026-07-05 12:00)' },
+      { k: 'visible', l: '发布(取消则前台隐藏)', type: 'check' },
+      { k: 'excerpt', l: '摘要(列表页显示)', type: 'textarea', rows: 3, full: 1 },
+      { k: 'excerpt_en', l: 'Excerpt (EN,可空)', type: 'textarea', rows: 2, full: 1 },
+      { k: 'content', l: '正文(空行分段)', type: 'textarea', rows: 12, full: 1 },
+      { k: 'content_en', l: 'Content (EN,可空)', type: 'textarea', rows: 6, full: 1 },
+      { k: 'image', l: '配图', type: 'image', full: 1 }
+    ]
+  },
+  partners: {
+    title: '伙伴管理', api: '/api/admin/partners', addLabel: '+ 新增伙伴',
+    columns: r => `
+      <td>${r.logo ? `<img class="thumb" src="${esc(toAdminPath(r.logo))}" style="object-fit:contain">` : ''}</td>
+      <td><b>${esc(r.name)}</b></td>
+      <td>${esc(r.category)}</td>
+      <td>${r.url ? `<a href="${esc(r.url)}" target="_blank" style="color:var(--accent-deep)">${esc(r.url)}</a>` : '—'}</td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>
+      <td>${esc(r.sort_order)}</td>`,
+    heads: ['Logo', '名称', '类别', '官网', '状态', '排序'],
+    fields: [
+      { k: 'name', l: '名称 *' },
+      { k: 'category', l: '类别(如 金融 / 法律 / 设计)' },
+      { k: 'url', l: '官网链接(可空)' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'visible', l: '在前台显示', type: 'check' },
+      { k: 'logo', l: 'Logo 图片', type: 'image', full: 1 }
+    ]
+  },
+  services: {
+    title: '服务名录', api: '/api/admin/services', addLabel: '+ 新增商户',
+    columns: r => {
+      const today = new Date().toISOString().slice(0, 10);
+      const expired = r.expires_at && r.expires_at < today;
+      return `
+      <td>${r.logo ? `<img class="thumb" src="${esc(toAdminPath(r.logo))}" style="object-fit:contain">` : ''}</td>
+      <td><b>${esc(r.name)}</b><br><span style="color:var(--ink-3);font-size:12.5px">${esc(r.tagline)}</span></td>
+      <td>${esc(r.category)}</td>
+      <td>${esc(r.phone)}${r.wechat ? '<br><span style="color:var(--ink-3);font-size:12.5px">微信: ' + esc(r.wechat) + '</span>' : ''}</td>
+      <td>${r.expires_at ? `<span class="tag ${expired ? 'red' : ''}">${expired ? '已过期 ' : '至 '}${esc(r.expires_at)}</span>` : '<span class="tag">不限期</span>'}</td>
+      <td>${r.featured ? '<span class="tag green">推荐位</span>' : ''} <span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>`;
+    },
+    heads: ['Logo', '商户 / 简介', '类别', '联系方式', '年费有效期', '状态'],
+    fields: [
+      { k: 'name', l: '商户名称 *' },
+      { k: 'category', l: '类别(可手动输入新类别)', type: 'combo', opts: ['建材', '家具', 'Staging 布置', '建筑维修', '清洁', '除草园艺', '地毯', '搬家', '贷款金融', '验房', '其他'] },
+      { k: 'tagline', l: '一句话介绍(列表卡片显示)', full: 1 },
+      { k: 'tagline_en', l: 'Tagline (EN,可空)', full: 1 },
+      { k: 'phone', l: '电话' }, { k: 'email', l: '邮箱' },
+      { k: 'wechat', l: '微信号' }, { k: 'website', l: '网址(可空)' },
+      { k: 'expires_at', l: '年费有效期至(如 2027-07-05,留空不限)' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'featured', l: '推荐位(付费高档:排前 + 高亮)', type: 'check' },
+      { k: 'visible', l: '在前台显示', type: 'check' },
+      { k: 'description', l: '详细介绍(可空)', type: 'textarea', rows: 4, full: 1 },
+      { k: 'description_en', l: 'Description (EN,可空)', type: 'textarea', rows: 3, full: 1 },
+      { k: 'logo', l: 'Logo / 门头照片', type: 'image', full: 1 }
+    ]
+  },
+  videos: {
+    title: '视频管理', api: '/api/admin/videos', addLabel: '+ 新增视频',
+    columns: r => `
+      <td>${r.cover ? `<img class="thumb" src="${esc(toAdminPath(r.cover))}">` : '▶'}</td>
+      <td><b>${esc(r.title)}</b><br><span style="color:var(--ink-3);font-size:12.5px">ID: ${esc(r.video_id)}</span></td>
+      <td>${esc(r.category || '—')}</td>
+      <td>${r.home_top ? '<span class="tag green">置顶</span>' : ''}</td>
+      <td style="white-space:nowrap">${esc((r.published_at || '').slice(0, 10))}</td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>`,
+    heads: ['封面', '标题 / 视频ID', '分类', '置顶', '发布时间', '状态'],
+    fields: [
+      { k: 'title', l: '标题 *', full: 1 },
+      { k: 'title_en', l: 'Title (EN,可空)', full: 1 },
+      { k: 'video_id', l: 'YouTube 链接或视频 ID(直接粘贴完整链接即可,自动提取)', full: 1 },
+      { k: 'category', l: '分类(可手动输入新分类)', type: 'combo', opts: ['房源视频', '一点镜头', '文化', '活动'] },
+      { k: 'published_at', l: '发布时间(如 2026-07-18 10:00,留空为现在)' },
+      { k: 'home_top', l: '置顶(在文化页「一点镜头」排最前)', type: 'check' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'visible', l: '在前台显示(文化页「一点镜头」区)', type: 'check' },
+      { k: 'cover', l: '封面图(留空自动用 YouTube 缩略图)', type: 'image', full: 1 }
+    ]
+  },
+  schools: {
+    title: '学校信息', api: '/api/admin/schools', addLabel: '+ 新增学校',
+    columns: r => `
+      <td>${r.image ? `<img class="thumb" src="${esc(toAdminPath(r.image))}">` : ''}</td>
+      <td><b>${esc(r.name)}</b>${r.name_en ? `<br><span style="color:var(--ink-3);font-size:12.5px">${esc(r.name_en)}</span>` : ''}</td>
+      <td>${esc(r.type || '—')}</td>
+      <td>${esc(r.suburb || '—')}</td>
+      <td>${esc(r.rating || '—')}</td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>`,
+    heads: ['图片', '校名', '类型', '地区', '评级', '状态'],
+    fields: [
+      { k: 'name', l: '校名 *' },
+      { k: 'name_en', l: 'Name (EN,可空)' },
+      { k: 'type', l: '类型(可手动输入)', type: 'combo', opts: ['小学 Primary', '初中 Intermediate', '中学 College', '私立 Private', '教会 State-integrated'] },
+      { k: 'suburb', l: '地区(从列表选,或直接输入新地区)', type: 'suburb' },
+      { k: 'address', l: '地址', full: 1 },
+      { k: 'rating', l: '评级(如 Decile 9 / EQI 400,可空)' },
+      { k: 'website', l: '学校官网(可空)' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'visible', l: '在前台显示', type: 'check' },
+      { k: 'description', l: '简介(可空)', type: 'textarea', rows: 4, full: 1 },
+      { k: 'description_en', l: 'Description (EN,可空)', type: 'textarea', rows: 3, full: 1 },
+      { k: 'image', l: '图片(可空)', type: 'image', full: 1 }
+    ]
+  },
+  suburbs: {
+    title: '地区管理', api: '/api/admin/suburbs', addLabel: '+ 新增地区',
+    columns: r => `
+      <td><b>${esc(r.name)}</b></td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>
+      <td>${esc(r.sort_order)}</td>`,
+    heads: ['地区名称', '状态', '排序'],
+    fields: [
+      { k: 'name', l: '地区名称(如 Albany / Newmarket)*' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'visible', l: '在选择列表中显示', type: 'check' }
+    ]
+  },
+  sections: {
+    title: '板块管理', api: '/api/admin/sections', addLabel: '+ 新增板块',
+    columns: r => `
+      <td><b>${esc(r.name_zh)}</b> <span style="color:var(--ink-3)">${esc(r.name_en)}</span></td>
+      <td>${esc(r.slug)}</td>
+      <td>${esc(r.tagline_zh)}</td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>
+      <td>${esc(r.sort_order)}</td>`,
+    heads: ['板块', 'Slug', '标语', '状态', '排序'],
+    fields: [
+      { k: 'name_zh', l: '名称(中文)*' }, { k: 'name_en', l: 'Name (EN)' },
+      { k: 'slug', l: 'Slug(URL 标识,如 living)*' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'tagline_zh', l: '标语(中文)', full: 1 },
+      { k: 'tagline_en', l: 'Tagline (EN)', full: 1 },
+      { k: 'visible', l: '在前台显示', type: 'check' }
+    ]
+  },
+  categories: {
+    title: '分类管理', api: '/api/admin/categories', addLabel: '+ 新增分类',
+    columns: r => `
+      <td>${esc((sectionsCache.find(s => s.id === r.section_id) || {}).name_zh || '?')}</td>
+      <td><b>${esc(r.name_zh)}</b> <span style="color:var(--ink-3)">${esc(r.name_en)}</span></td>
+      <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>
+      <td>${esc(r.sort_order)}</td>`,
+    heads: ['所属板块', '分类', '状态', '排序'],
+    fields: [
+      { k: 'section_id', l: '所属板块 *', type: 'section' },
+      { k: 'name_zh', l: '名称(中文)*' }, { k: 'name_en', l: 'Name (EN)' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'visible', l: '在前台显示', type: 'check' }
+    ]
+  },
+  posts: {
+    title: '内容管理', api: '/api/admin/posts', addLabel: '+ 官方发布',
+    columns: r => '',
+    heads: [],
+    fields: [
+      { k: 'type', l: '类型', type: 'select2', opts: [['article', '文章'], ['video', '视频'], ['event', '活动'], ['update', '动态'], ['service', '服务'], ['market', '二手'], ['job', '招聘'], ['seek', '求职']] },
+      { k: 'section_id', l: '板块 *', type: 'section' },
+      { k: 'category_id', l: '分类', type: 'anycat' },
+      { k: 'title_zh', l: '标题(中文)*', full: 1 },
+      { k: 'title_en', l: 'Title (EN)', full: 1 },
+      { k: 'status', l: '状态', type: 'select2', opts: [['approved', '通过(展示)'], ['pending', '待审核'], ['offline', '下架'], ['rejected', '驳回']] },
+      { k: 'featured', l: '编辑推荐(主页精选流)', type: 'check' },
+      { k: 'published_at', l: '发布时间(如 2026-07-11 10:00)' },
+      { k: 'price_label', l: '价格显示(可空)' },
+      { k: 'location', l: '地点(可空)' },
+      { k: 'event_time', l: '活动时间(可空)' },
+      { k: 'video_url', l: '视频链接(YouTube / Bilibili,可空)', full: 1 },
+      { k: 'content_zh', l: '内容(中文,空行分段)', type: 'textarea', rows: 8, full: 1 },
+      { k: 'content_en', l: 'Content (EN)', type: 'textarea', rows: 4, full: 1 },
+      { k: 'images', l: '图片(可多张,第一张为封面)', type: 'images', full: 1 }
+    ]
+  },
+  vendors: {
+    title: '入驻方', api: '/api/admin/vendors', addLabel: '',
+    columns: r => '',
+    heads: [],
+    fields: [
+      { k: 'name_zh', l: '名称(中文)*' }, { k: 'name_en', l: 'Name (EN)' },
+      { k: 'section_id', l: '板块', type: 'section' },
+      { k: 'category_id', l: '分类', type: 'anycat' },
+      { k: 'tagline_zh', l: '一句话介绍(中文)', full: 1 },
+      { k: 'tagline_en', l: 'Tagline (EN)', full: 1 },
+      { k: 'phone', l: '电话' }, { k: 'email', l: '邮箱' },
+      { k: 'wechat', l: '微信' }, { k: 'website', l: '官网' },
+      { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
+      { k: 'intro_zh', l: '详细介绍(中文)', type: 'textarea', rows: 5, full: 1 },
+      { k: 'intro_en', l: 'Introduction (EN)', type: 'textarea', rows: 3, full: 1 },
+      { k: 'logo', l: 'Logo / 头像', type: 'image', full: 1 },
+      { k: 'photos', l: '展示图片', type: 'images', full: 1 }
+    ]
+  }
+};
+let sectionsCache = [], categoriesCache = [], suburbsCache = [];
+async function loadTaxonomy() {
+  sectionsCache = await api('/api/admin/sections');
+  categoriesCache = await api('/api/admin/categories');
+}
+
+/* ================= 页面渲染 ================= */
+const main = $('#main');
+
+function go(tab) {
+  $$('#menu a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
+  if (tab === 'dashboard') return renderDashboard();
+  if (tab === 'enquiries') return renderEnquiries();
+  if (tab === 'settings') return renderSettings();
+  if (tab === 'users') return renderUsers();
+  if (tab === 'subscribers') return renderSubscribers();
+  if (tab === 'vendors') return renderVendors();
+  if (tab === 'posts') return renderPosts();
+  if (tab === 'logs') return renderLogs();
+  return renderTable(tab);
+}
+$$('#menu a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); go(a.dataset.tab); }));
+
+async function refreshBadge() {
+  try {
+    const s = await api('/api/admin/stats');
+    const set = (id, n) => { const b = $(id); b.style.display = n ? '' : 'none'; b.textContent = n; };
+    set('#unread-badge', s.unread);
+    set('#vp-badge', s.vendors_pending);
+    set('#pp-badge', s.posts_pending);
+    return s;
+  } catch (e) { return null; }
+}
+
+async function renderDashboard() {
+  main.innerHTML = '<h2>概览</h2><p class="sub">欢迎回来。</p><div class="stat-grid" id="stats"></div>';
+  const s = await refreshBadge();
+  if (!s) return;
+  $('#stats').innerHTML = [
+    ['注册用户', s.users, 'users'], ['入驻方', s.vendors, 'vendors'],
+    ['待审入驻', s.vendors_pending, 'vendors'], ['平台内容', s.posts, 'posts'],
+    ['待审内容', s.posts_pending, 'posts'],
+    ['在库房源', s.properties, 'properties'], ['专家', s.agents, 'agents'],
+    ['资讯文章', s.news, 'news'], ['视频', s.videos, 'videos'],
+    ['学校', s.schools, 'schools'], ['订阅邮箱', s.subscribers, 'subscribers'],
+    ['合作伙伴', s.partners, 'partners'],
+    ['服务商户', s.services, 'services'],
+    ['客户留言', s.enquiries, 'enquiries'], ['未读留言', s.unread, 'enquiries']
+  ].map(([l, n, t]) => `<div class="stat-card" style="cursor:pointer" onclick="__go('${t}')"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+}
+window.__go = go;
+
+async function renderTable(name) {
+  const cfg = SCHEMAS[name];
+  main.innerHTML = `
+    <div class="topbar">
+      <div><h2>${cfg.title}</h2><p class="sub">共 <span id="tcount">…</span> 条</p></div>
+      <button class="btn btn--solid" id="add-btn">${cfg.addLabel}</button>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr>${cfg.heads.map(h => `<th>${h}</th>`).join('')}<th style="width:1%">操作</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="9" class="empty">加载中…</td></tr></tbody>
+    </table></div>`;
+  if (name === 'properties') agentsCache = await api('/api/admin/agents');
+  if (name === 'properties' || name === 'schools') suburbsCache = await api('/api/suburbs');
+  if (name === 'categories' || name === 'sections') await loadTaxonomy();
+  const rows = await api(cfg.api);
+  $('#tcount').textContent = rows.length;
+  const tbody = $('#tbody');
+  const fill = list => {
+    tbody.innerHTML = list.length ? list.map(r => `
+      <tr>${cfg.columns(r)}
+        <td class="rowbtns">
+          <button class="btn btn--sm" data-edit="${r.id}">编辑</button>
+          <button class="btn btn--sm btn--danger" data-del="${r.id}">删除</button>
+        </td>
+      </tr>`).join('') : `<tr><td colspan="9" class="empty">暂无数据,点击右上角新增。</td></tr>`;
+  };
+  fill(rows);
+  /* 分类管理:按板块筛选,一屏看全某板块下的所有分类(如教育 → 语言/才艺…) */
+  if (name === 'categories') {
+    $('.topbar').insertAdjacentHTML('afterend', `
+      <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center">
+        <span style="color:var(--ink-3);font-size:13px">按板块查看</span>
+        <select id="cat-sec-f" style="width:200px">
+          <option value="">全部板块</option>
+          ${sectionsCache.map(s => `<option value="${s.id}">${esc(s.name_zh)} ${esc(s.name_en)}</option>`).join('')}
+        </select>
+      </div>`);
+    $('#cat-sec-f').addEventListener('change', e => {
+      const sid = Number(e.target.value);
+      const list = sid ? rows.filter(r => r.section_id === sid) : rows;
+      $('#tcount').textContent = list.length;
+      fill(list);
+    });
+  }
+  $('#add-btn').addEventListener('click', () => openForm(name, null));
+  tbody.addEventListener('click', async e => {
+    const ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
+    if (ed) openForm(name, rows.find(r => r.id == ed.dataset.edit));
+    if (dl && confirm('确认删除这条记录?此操作不可恢复。')) {
+      await del(`${cfg.api}/${dl.dataset.del}`);
+      renderTable(name);
+    }
+  });
+}
+
+/* ================= 表单弹窗 ================= */
+function fieldHTML(f, val) {
+  const v = val == null ? '' : val;
+  const label = `<label>${esc(f.l)}</label>`;
+  if (f.type === 'select')
+    return `${label}<select name="${f.k}">${f.opts.map(o => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  if (f.type === 'combo') /* 可选可手输:预设之外允许自定义新类别 */
+    return `${label}<input name="${f.k}" list="dl-${f.k}" value="${esc(v)}" placeholder="从列表选择,或直接输入新类别">
+      <datalist id="dl-${f.k}">${f.opts.map(o => `<option value="${esc(o)}">`).join('')}</datalist>`;
+  if (f.type === 'suburb') /* 奥克兰地区:下拉可选可手输,新地区保存后自动入列 */
+    return `${label}<input name="${f.k}" list="dl-suburb-${f.k}" value="${esc(v)}" placeholder="如 Albany / Newmarket…">
+      <datalist id="dl-suburb-${f.k}">${suburbsCache.map(s => `<option value="${esc(s)}">`).join('')}</datalist>`;
+  if (f.type === 'select2')
+    return `${label}<select name="${f.k}">${f.opts.map(([val, lab]) => `<option value="${val}"${val === v ? ' selected' : ''}>${esc(lab)}</option>`).join('')}</select>`;
+  if (f.type === 'section')
+    return `${label}<select name="${f.k}"><option value="">—</option>${sectionsCache.map(s =>
+      `<option value="${s.id}"${s.id == v ? ' selected' : ''}>${esc(s.name_zh)}</option>`).join('')}</select>`;
+  if (f.type === 'anycat')
+    return `${label}<select name="${f.k}"><option value="">—</option>${categoriesCache.map(c => {
+      const sec = sectionsCache.find(s => s.id === c.section_id) || {};
+      return `<option value="${c.id}"${c.id == v ? ' selected' : ''}>${esc(sec.name_zh || '?')} · ${esc(c.name_zh)}</option>`;
+    }).join('')}</select>`;
+  if (f.type === 'agent')
+    return `${label}<select name="${f.k}"><option value="">— 不指定 —</option>${agentsCache.map(a =>
+      `<option value="${a.id}"${a.id == v ? ' selected' : ''}>${esc(a.name)}(${esc(a.category)})</option>`).join('')}</select>`;
+  if (f.type === 'check')
+    return `<div class="chk" style="margin-top:24px"><input type="checkbox" name="${f.k}" id="chk-${f.k}"${v ? ' checked' : ''}><label for="chk-${f.k}" style="margin:0">${esc(f.l)}</label></div>`;
+  if (f.type === 'textarea')
+    return `${label}<textarea name="${f.k}" rows="${f.rows || 4}">${esc(v)}</textarea>`;
+  if (f.type === 'image')
+    return `${label}<div class="imgs" data-single="1" data-field="${f.k}">${v ? imTag(v) : ''}</div>
+      <div class="upl" data-for="${f.k}">点击上传图片</div><input type="file" accept="image/*" hidden data-file="${f.k}">`;
+  if (f.type === 'images')
+    return `${label}<div class="imgs" data-field="${f.k}">${(Array.isArray(v) ? v : []).map(imTag).join('')}</div>
+      <div class="upl" data-for="${f.k}">点击上传图片(可多选)</div><input type="file" accept="image/*" multiple hidden data-file="${f.k}">`;
+  return `${label}<input name="${f.k}" type="${f.type || 'text'}" value="${esc(v)}">`;
+}
+const imTag = src => `<div class="im" data-src="${esc(toSitePath(src))}"><img src="${esc(toAdminPath(src))}"><button type="button" class="x">×</button></div>`;
+
+function openForm(name, row) {
+  const cfg = SCHEMAS[name];
+  const isNew = !row;
+  $('#modal').innerHTML = `
+    <h3>${isNew ? cfg.addLabel.replace('+ ', '') : '编辑 · ' + esc(row.title || row.name || row.title_zh || row.name_zh || '')}</h3>
+    <form id="mform"><div class="fgrid">
+      ${cfg.fields.map(f => `<div class="f${f.full ? ' full' : ''}">${fieldHTML(f, row ? row[f.k] : (f.k === 'visible' ? 1 : f.k === 'status' ? '在售' : null))}</div>`).join('')}
+    </div>
+    <div class="actions">
+      <button type="button" class="btn" id="m-cancel">取消</button>
+      <button type="submit" class="btn btn--solid">保存</button>
+    </div></form>`;
+  $('#modal-bg').classList.add('open');
+
+  // 上传
+  $$('.upl', $('#modal')).forEach(u => u.addEventListener('click', () => $(`[data-file="${u.dataset.for}"]`).click()));
+  $$('[data-file]', $('#modal')).forEach(inp => inp.addEventListener('change', async () => {
+    if (!inp.files.length) return;
+    const u = $(`.upl[data-for="${inp.dataset.file}"]`);
+    u.textContent = '上传中…';
+    try {
+      const files = await uploadFiles(inp.files);
+      const box = $(`.imgs[data-field="${inp.dataset.file}"]`);
+      if (box.dataset.single) box.innerHTML = imTag(files[0]);
+      else box.insertAdjacentHTML('beforeend', files.map(imTag).join(''));
+    } catch (e) { alert(e.message); }
+    u.textContent = '点击上传图片';
+    inp.value = '';
+  }));
+  $('#modal').addEventListener('click', e => {
+    if (e.target.classList.contains('x')) e.target.closest('.im').remove();
+  });
+  $('#m-cancel').addEventListener('click', () => $('#modal-bg').classList.remove('open'));
+
+  $('#mform').addEventListener('submit', async e => {
+    e.preventDefault();
+    const body = {};
+    const form = e.target;
+    for (const f of cfg.fields) {
+      if (f.type === 'check') body[f.k] = form.querySelector(`[name="${f.k}"]`).checked ? 1 : 0;
+      else if (f.type === 'image') {
+        const im = $(`.imgs[data-field="${f.k}"] .im`);
+        body[f.k] = im ? im.dataset.src : '';
+      } else if (f.type === 'images') {
+        body[f.k] = $$(`.imgs[data-field="${f.k}"] .im`).map(x => x.dataset.src);
+      } else body[f.k] = form.querySelector(`[name="${f.k}"]`).value;
+    }
+    try {
+      if (isNew) await post(cfg.api, body);
+      else await put(`${cfg.api}/${row.id}`, body);
+      $('#modal-bg').classList.remove('open');
+      toast('已保存');
+      go(name);
+    } catch (err) { alert(err.message); }
+  });
+}
+$('#modal-bg').addEventListener('click', e => { if (e.target.id === 'modal-bg') $('#modal-bg').classList.remove('open'); });
+
+/* ================= 用户管理 ================= */
+const VSTATUS = { pending: ['待审核', ''], approved: ['已入驻', 'green'], rejected: ['已驳回', 'red'], suspended: ['已暂停', 'red'] };
+const uFilter = { q: '', status: '', from: '', to: '', sort: 'new' };
+async function renderUsers() {
+  main.innerHTML = `
+    <div class="topbar"><div><h2>用户管理</h2>
+    <p class="sub">封禁 = 立即踢下线 + 无法登录 + 其公开内容与入驻主页自动下架(解封自动恢复);注销 = 连带删除其发布与主页。</p></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px" id="ufilter">
+      <input id="uf-q" placeholder="搜索邮箱 / 称呼 / 电话…" value="${esc(uFilter.q)}" style="width:220px">
+      ${[['', '全部'], ['active', '正常'], ['banned', '已封禁']].map(([v, l]) =>
+        `<button class="btn btn--sm${uFilter.status === v ? ' btn--solid' : ''}" data-st="${v}">${l}</button>`).join('')}
+      <span style="color:var(--ink-3);font-size:13px">注册时间</span>
+      <input id="uf-from" type="date" value="${esc(uFilter.from)}" style="width:150px">
+      <span style="color:var(--ink-3)">—</span>
+      <input id="uf-to" type="date" value="${esc(uFilter.to)}" style="width:150px">
+      <button class="btn btn--sm" id="uf-sort">${uFilter.sort === 'new' ? '最新在前 ↓' : '最早在前 ↑'}</button>
+      <button class="btn btn--sm btn--solid" id="uf-go">筛选</button>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>邮箱 / 称呼</th><th>电话</th><th>入驻状态</th><th>发布(在线)</th><th>注册时间</th><th>状态</th><th style="width:1%">操作</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="9" class="empty">加载中…</td></tr></tbody>
+    </table></div>`;
+  const doLoad = async () => {
+    const qs = new URLSearchParams();
+    if (uFilter.q) qs.set('q', uFilter.q);
+    if (uFilter.status) qs.set('status', uFilter.status);
+    if (uFilter.from) qs.set('from', uFilter.from);
+    if (uFilter.to) qs.set('to', uFilter.to);
+    qs.set('sort', uFilter.sort === 'new' ? 'new' : 'old');
+    const rows = await api('/api/admin/users?' + qs);
+    $('#tbody').innerHTML = rows.length ? rows.map(r => `
+      <tr${r.status === 'banned' ? ' style="opacity:.65"' : ''}>
+        <td>${r.id}</td>
+        <td><b>${esc(r.email)}</b>${r.name ? `<br><span style="color:var(--ink-3);font-size:12.5px">${esc(r.name)}</span>` : ''}</td>
+        <td>${esc(r.phone || '—')}</td>
+        <td>${r.vendor_id ? `<span class="tag ${(VSTATUS[r.vendor_status] || [])[1] || ''}">${esc(r.vendor_name || '')} · ${(VSTATUS[r.vendor_status] || ['?'])[0]}</span>` : '—'}</td>
+        <td>${r.post_count}(${r.live_count})</td>
+        <td style="white-space:nowrap">${esc((r.created_at || '').slice(0, 10))}</td>
+        <td><span class="tag ${r.status === 'active' ? 'green' : 'red'}">${r.status === 'active' ? '正常' : '已封禁'}</span></td>
+        <td><div class="rowbtns">
+          <button class="btn btn--sm" data-view="${r.id}">详情</button>
+          <button class="btn btn--sm" data-pw="${r.id}">重置密码</button>
+          ${r.live_count ? `<button class="btn btn--sm btn--danger" data-off="${r.id}">下架其内容</button>` : ''}
+          ${r.status === 'active'
+            ? `<button class="btn btn--sm btn--danger" data-ban="${r.id}" data-mail="${esc(r.email)}">封禁</button>`
+            : `<button class="btn btn--sm" data-unban="${r.id}">解封</button>`}
+          <button class="btn btn--sm btn--danger" data-del="${r.id}" data-mail="${esc(r.email)}">注销</button>
+        </div></td>
+      </tr>`).join('') : '<tr><td colspan="9" class="empty">没有符合条件的用户。</td></tr>';
+  };
+  $('#uf-go').addEventListener('click', () => { uFilter.q = $('#uf-q').value.trim(); uFilter.from = $('#uf-from').value; uFilter.to = $('#uf-to').value; doLoad(); });
+  $('#uf-q').addEventListener('keydown', e => { if (e.key === 'Enter') $('#uf-go').click(); });
+  $('#uf-sort').addEventListener('click', () => { uFilter.sort = uFilter.sort === 'new' ? 'old' : 'new'; uFilter.q = $('#uf-q').value.trim(); renderUsers(); });
+  $$('#ufilter [data-st]').forEach(b => b.addEventListener('click', () => { uFilter.status = b.dataset.st; uFilter.q = $('#uf-q').value.trim(); renderUsers(); }));
+  $('#tbody').addEventListener('click', async e => {
+    const q = s => e.target.closest(s);
+    const vw = q('[data-view]'), pw = q('[data-pw]'), off = q('[data-off]'),
+      ban = q('[data-ban]'), un = q('[data-unban]'), dl = q('[data-del]');
+    try {
+      if (vw) return showUserDetail(vw.dataset.view);
+      if (pw && confirm('重置该用户的密码?旧密码将立即失效并踢下线。')) {
+        const r = await put(`/api/admin/users/${pw.dataset.pw}/reset-password`, {});
+        prompt('已重置。新密码(仅显示这一次,请复制发给用户):', r.password);
+        doLoad();
+      }
+      if (off && confirm('一键下架该用户的全部公开内容?')) {
+        const r = await post(`/api/admin/users/${off.dataset.off}/offline-posts`, {});
+        toast(`已下架 ${r.count} 条内容`);
+        doLoad();
+      }
+      if (ban && confirm(`封禁 ${ban.dataset.mail}?\n\n将立即踢下线、禁止登录,其公开内容与入驻主页自动下架。`)) {
+        await put(`/api/admin/users/${ban.dataset.ban}`, { status: 'banned' });
+        toast('已封禁并踢下线');
+        doLoad();
+      }
+      if (un) { await put(`/api/admin/users/${un.dataset.unban}`, { status: 'active' }); toast('已解封,内容自动恢复'); doLoad(); }
+      if (dl && confirm(`注销账号 ${dl.dataset.mail}?将连带删除其全部发布与入驻主页!`)
+             && confirm('二次确认:此操作不可恢复,确定注销?')) {
+        const r = await del(`/api/admin/users/${dl.dataset.del}`);
+        toast(`已注销(删除发布 ${r.posts_deleted} 条)`);
+        doLoad();
+      }
+    } catch (err) { alert(err.message); }
+  });
+  doLoad();
+}
+/* 用户详情弹窗:资料 + 入驻状态 + 全部发布记录 */
+async function showUserDetail(id) {
+  const u = await api('/api/admin/users/' + id);
+  const v = u.vendor;
+  $('#modal').innerHTML = `
+    <h3>用户详情 · ${esc(u.email)}</h3>
+    <p class="meta" style="margin-bottom:6px">
+      ${esc(u.name || '(未设称呼)')} · ${esc(u.phone || '无电话')} · 注册于 ${esc((u.created_at || '').slice(0, 16))}
+      · <span class="tag ${u.status === 'active' ? 'green' : 'red'}">${u.status === 'active' ? '正常' : '已封禁'}</span>
+      · 在线会话 ${u.active_sessions}
+    </p>
+    <p class="meta" style="margin-bottom:14px">入驻状态:${v
+      ? `<span class="tag ${(VSTATUS[v.status] || [])[1] || ''}">${esc(v.name_zh)} · ${(VSTATUS[v.status] || ['?'])[0]}</span>
+         ${v.verified ? '<span class="tag green">✓ 认证</span>' : ''}${v.featured ? '<span class="tag green">推荐位</span>' : ''}
+         · 收到留言 ${u.enquiry_count} 条`
+      : '未申请入驻'}</p>
+    <div class="tablewrap" style="max-height:340px;overflow-y:auto"><table>
+      <thead><tr><th>ID</th><th>标题</th><th>类型</th><th>状态</th><th>时间</th></tr></thead>
+      <tbody>${u.posts.length ? u.posts.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${esc(p.title_zh || p.title_en)}</td>
+          <td>${PTYPE[p.type] || esc(p.type)}</td>
+          <td><span class="tag ${(PSTATUS[p.status] || [])[1] || ''}">${(PSTATUS[p.status] || ['?'])[0]}</span>${p.featured ? ' <span class="tag green">精选</span>' : ''}</td>
+          <td style="white-space:nowrap">${esc((p.created_at || '').slice(0, 10))}</td>
+        </tr>`).join('') : '<tr><td colspan="5" class="empty">暂无发布</td></tr>'}</tbody>
+    </table></div>
+    <div class="actions"><button type="button" class="btn" id="m-cancel">关闭</button>
+      <button type="button" class="btn btn--solid" id="m-goposts">去内容审核管理其内容</button></div>`;
+  $('#modal-bg').classList.add('open');
+  $('#m-cancel').addEventListener('click', () => $('#modal-bg').classList.remove('open'));
+  $('#m-goposts').addEventListener('click', () => { $('#modal-bg').classList.remove('open'); go('posts'); });
+}
+
+/* ================= 操作日志 ================= */
+const ALOG_LABEL = {
+  ban: '封禁用户', unban: '解封用户', delete_user: '注销用户', reset_password: '重置密码', offline_posts: '一键下架内容',
+  vendor_approve: '批准入驻', vendor_reject: '驳回/取消入驻', vendor_suspend: '暂停入驻', vendor_pending: '入驻转待审',
+  vendor_verify: '授予认证', vendor_unverify: '取消认证', vendor_feature: '设推荐位', vendor_unfeature: '取消推荐位', delete_vendor: '删除入驻方',
+  post_approve: '内容过审', post_reject: '驳回内容', post_offline: '下架内容', post_pending: '内容转待审', delete_post: '删除内容'
+};
+async function renderLogs() {
+  main.innerHTML = `
+    <h2>操作日志</h2><p class="sub">管理员敏感操作留痕:谁、何时、对谁、做了什么(最近 300 条)。</p>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <input id="lg-q" placeholder="搜索对象 / 详情 / 操作人…" style="width:260px">
+      <select id="lg-a" style="width:180px"><option value="">全部操作</option>
+        ${Object.entries(ALOG_LABEL).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select>
+      <button class="btn btn--sm btn--solid" id="lg-go">查询</button>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>详情</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="5" class="empty">加载中…</td></tr></tbody>
+    </table></div>`;
+  const load = async () => {
+    const qs = new URLSearchParams();
+    const kw = $('#lg-q').value.trim(), ac = $('#lg-a').value;
+    if (kw) qs.set('q', kw);
+    if (ac) qs.set('action', ac);
+    const rows = await api('/api/admin/logs?' + qs);
+    $('#tbody').innerHTML = rows.length ? rows.map(r => `
+      <tr>
+        <td style="white-space:nowrap">${esc(r.created_at)}</td>
+        <td>${esc(r.admin)}</td>
+        <td><span class="tag ${/delete|ban|reject|offline|suspend/.test(r.action) && r.action !== 'unban' ? 'red' : ''}">${ALOG_LABEL[r.action] || esc(r.action)}</span></td>
+        <td>${esc(r.target_type)} #${r.target_id ?? '—'} ${esc(r.target_label)}</td>
+        <td style="color:var(--ink-2)">${esc(r.detail || '—')}</td>
+      </tr>`).join('') : '<tr><td colspan="5" class="empty">暂无日志。</td></tr>';
+  };
+  $('#lg-go').addEventListener('click', load);
+  $('#lg-q').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+  load();
+}
+
+/* ================= 入驻审核 ================= */
+async function renderVendors(filter) {
+  filter = filter || '';
+  await loadTaxonomy();
+  main.innerHTML = `
+    <div class="topbar"><div><h2>入驻审核</h2><p class="sub">商家 / 顾问 / 老师的入驻申请与主页管理。资料修改后会重新进入待审核。</p></div></div>
+    <div style="margin-bottom:18px;display:flex;gap:8px" id="vfilter">
+      ${[['', '全部'], ['pending', '待审核'], ['approved', '已入驻'], ['rejected', '已驳回'], ['suspended', '已暂停']].map(([v, l]) =>
+        `<button class="btn btn--sm${v === filter ? ' btn--solid' : ''}" data-f="${v}">${l}</button>`).join('')}
+    </div>
+    <div id="vlist"><div class="empty">加载中…</div></div>`;
+  $('#vfilter').addEventListener('click', e => {
+    const b = e.target.closest('[data-f]');
+    if (b) renderVendors(b.dataset.f);
+  });
+  const rows = await api('/api/admin/vendors' + (filter ? '?status=' + filter : ''));
+  refreshBadge();
+  $('#vlist').innerHTML = rows.length ? rows.map(r => `
+    <div class="msgcard${r.status === 'pending' ? ' unread' : ''}">
+      <div class="mh">
+        <div style="display:flex;gap:14px;align-items:center">
+          ${r.logo ? `<img class="thumb round" src="${esc(toAdminPath(r.logo))}">` : ''}
+          <div>
+            <b style="font-size:16px">${esc(r.name_zh)}</b> <span style="color:var(--ink-3)">${esc(r.name_en)}</span>
+            <span class="tag ${(VSTATUS[r.status] || [])[1] || ''}">${(VSTATUS[r.status] || ['?'])[0]}</span>
+            ${r.verified ? '<span class="tag green">✓ 一点认证</span>' : ''}
+            ${r.featured ? '<span class="tag green">推荐位</span>' : ''}
+            <div class="meta">${esc(r.section_name || '?')}${r.category_name ? ' · ' + esc(r.category_name) : ''} · 账号:${esc(r.user_email || '?')} · 申请于 ${esc((r.created_at || '').slice(0, 10))}</div>
+          </div>
+        </div>
+      </div>
+      ${r.tagline_zh ? `<p style="margin-top:8px">${esc(r.tagline_zh)}</p>` : ''}
+      ${r.intro_zh ? `<p class="meta" style="margin-top:4px">${esc(r.intro_zh.slice(0, 200))}${r.intro_zh.length > 200 ? '…' : ''}</p>` : ''}
+      <div class="meta" style="margin-top:4px">${[r.phone, r.email, r.wechat ? '微信:' + r.wechat : '', r.website].filter(Boolean).map(esc).join(' · ')}</div>
+      ${r.apply_message ? `<p class="meta" style="margin-top:4px">申请留言:${esc(r.apply_message)}</p>` : ''}
+      ${r.review_note ? `<p class="meta" style="margin-top:4px;color:var(--danger)">审核备注:${esc(r.review_note)}</p>` : ''}
+      <div class="rowbtns" style="margin-top:12px;flex-wrap:wrap">
+        ${r.status !== 'approved' ? `<button class="btn btn--sm btn--solid" data-approve="${r.id}">${r.status === 'suspended' ? '恢复入驻' : '批准入驻'}</button>` : ''}
+        ${r.status === 'pending' ? `<button class="btn btn--sm btn--danger" data-reject="${r.id}">驳回</button>` : ''}
+        ${r.status === 'approved' ? `
+          <button class="btn btn--sm" data-verify="${r.id}" data-v="${r.verified ? 0 : 1}">${r.verified ? '取消认证' : '授予一点认证'}</button>
+          <button class="btn btn--sm" data-feature="${r.id}" data-v="${r.featured ? 0 : 1}">${r.featured ? '取消推荐' : '设为推荐'}</button>
+          <button class="btn btn--sm btn--danger" data-suspend="${r.id}">暂停</button>
+          <button class="btn btn--sm btn--danger" data-revoke="${r.id}">取消资格</button>
+          <a class="btn btn--sm" href="../vendor.html?id=${r.id}" target="_blank">查看主页</a>` : ''}
+        <button class="btn btn--sm" data-editv="${r.id}">编辑资料</button>
+        <button class="btn btn--sm btn--danger" data-delv="${r.id}">删除</button>
+      </div>
+    </div>`).join('') : '<div class="empty">暂无记录。</div>';
+  $('#vlist').addEventListener('click', async e => {
+    const q = sel => e.target.closest(sel);
+    const ap = q('[data-approve]'), rj = q('[data-reject]'), vf = q('[data-verify]'), ft = q('[data-feature]'),
+      sp = q('[data-suspend]'), rv = q('[data-revoke]'), ed = q('[data-editv]'), dl = q('[data-delv]');
+    if (rv && confirm('取消该入驻方的入驻资格?其主页与发布将不再展示,对方可修改资料后重新申请。')) {
+      const note = prompt('取消原因(会通知对方,可留空):', '') || '';
+      await put(`/api/admin/vendors/${rv.dataset.revoke}`, { status: 'rejected', review_note: note });
+      toast('已取消入驻资格');
+      return renderVendors(filter);
+    }
+    try {
+      if (ap) { await put(`/api/admin/vendors/${ap.dataset.approve}`, { status: 'approved' }); toast('已批准入驻,已通知对方'); renderVendors(filter); }
+      if (rj) { const note = prompt('驳回原因(会展示给申请人):', ''); if (note !== null) { await put(`/api/admin/vendors/${rj.dataset.reject}`, { status: 'rejected', review_note: note }); toast('已驳回,已通知对方'); renderVendors(filter); } }
+      if (vf) { await put(`/api/admin/vendors/${vf.dataset.verify}`, { verified: Number(vf.dataset.v) }); toast(Number(vf.dataset.v) ? '已授予一点认证' : '已取消认证'); renderVendors(filter); }
+      if (ft) { await put(`/api/admin/vendors/${ft.dataset.feature}`, { featured: Number(ft.dataset.v) }); toast('推荐位已更新'); renderVendors(filter); }
+      if (sp && confirm('暂停该入驻方?其主页与发布将不再展示。')) { await put(`/api/admin/vendors/${sp.dataset.suspend}`, { status: 'suspended' }); toast('已暂停'); renderVendors(filter); }
+      if (ed) {
+        const rows2 = await api('/api/admin/vendors');
+        openForm('vendors', rows2.find(x => x.id == ed.dataset.editv));
+      }
+      if (dl && confirm('删除该入驻方及其全部发布?此操作不可恢复!')) { await del(`/api/admin/vendors/${dl.dataset.delv}`); renderVendors(filter); }
+    } catch (err) { alert(err.message); }
+  });
+}
+
+/* ================= 内容审核 ================= */
+const PTYPE = { market: '二手', service: '服务', update: '动态', event: '活动', job: '招聘', seek: '求职', article: '文章', video: '视频' };
+const PSTATUS = { pending: ['待审核', ''], approved: ['已发布', 'green'], rejected: ['已驳回', 'red'], offline: ['已下架', 'red'] };
+let pTypeFilter = '', pSecFilter = '';
+async function renderPosts(filter) {
+  filter = filter || '';
+  await loadTaxonomy();
+  main.innerHTML = `
+    <div class="topbar">
+      <div><h2>内容审核</h2><p class="sub">用户与入驻方发布的一切公开内容,须审核通过后才在前台展示;也可在此发布官方内容(文化文章 / 视频等)。</p></div>
+      <button class="btn btn--solid" id="add-btn">+ 官方发布</button>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap" id="pfilter">
+      ${[['', '全部'], ['pending', '待审核'], ['approved', '已发布'], ['rejected', '已驳回'], ['offline', '已下架']].map(([v, l]) =>
+        `<button class="btn btn--sm${v === filter ? ' btn--solid' : ''}" data-f="${v}">${l}</button>`).join('')}
+      <span style="border-left:1px solid var(--line);margin:0 4px"></span>
+      <select id="pf-type" style="width:130px">
+        <option value="">全部类型</option>
+        ${Object.entries(PTYPE).map(([k, l]) => `<option value="${k}"${pTypeFilter === k ? ' selected' : ''}>${l}</option>`).join('')}
+      </select>
+      <select id="pf-sec" style="width:150px">
+        <option value="">全部板块</option>
+        ${sectionsCache.map(s => `<option value="${s.id}"${pSecFilter == s.id ? ' selected' : ''}>${esc(s.name_zh)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>图</th><th>标题</th><th>类型</th><th>板块 / 分类</th><th>发布者</th><th>时间</th><th>状态</th><th style="width:1%">操作</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="9" class="empty">加载中…</td></tr></tbody>
+    </table></div>`;
+  $('#add-btn').addEventListener('click', () => openForm('posts', null));
+  $('#pfilter').addEventListener('click', e => {
+    const b = e.target.closest('[data-f]');
+    if (b) renderPosts(b.dataset.f);
+  });
+  $('#pf-type').addEventListener('change', e => { pTypeFilter = e.target.value; renderPosts(filter); });
+  $('#pf-sec').addEventListener('change', e => { pSecFilter = e.target.value; renderPosts(filter); });
+  const pqs = new URLSearchParams();
+  if (filter) pqs.set('status', filter);
+  if (pTypeFilter) pqs.set('type', pTypeFilter);
+  if (pSecFilter) pqs.set('section_id', pSecFilter);
+  const rows = await api('/api/admin/posts?' + pqs);
+  refreshBadge();
+  $('#tbody').innerHTML = rows.length ? rows.map(r => `
+    <tr${r.status === 'pending' ? ' style="background:#FBF7EC"' : ''}>
+      <td>${r.cover ? `<img class="thumb" src="${esc(toAdminPath(r.cover))}">` : (r.video_url ? '▶' : '')}</td>
+      <td><b>${esc(r.title_zh || r.title_en)}</b>${r.featured ? ' <span class="tag green">精选</span>' : ''}
+        ${r.review_note ? `<br><small style="color:var(--danger)">备注:${esc(r.review_note)}</small>` : ''}</td>
+      <td>${PTYPE[r.type] || esc(r.type)}</td>
+      <td style="white-space:nowrap">${esc(r.section ? r.section.name_zh : '—')}${r.category ? ' · ' + esc(r.category.name_zh) : ''}</td>
+      <td>${r.vendor_name ? esc(r.vendor_name) : (r.user_email ? esc(r.user_email) : '<span class="tag">官方</span>')}</td>
+      <td style="white-space:nowrap">${esc((r.created_at || '').slice(0, 10))}</td>
+      <td><span class="tag ${(PSTATUS[r.status] || [])[1] || ''}">${(PSTATUS[r.status] || ['?'])[0]}</span></td>
+      <td><div class="rowbtns">
+        ${r.status !== 'approved' ? `<button class="btn btn--sm btn--solid" data-ok="${r.id}">通过</button>` : `
+          <button class="btn btn--sm" data-feat="${r.id}" data-v="${r.featured ? 0 : 1}">${r.featured ? '取消精选' : '设为精选'}</button>
+          <button class="btn btn--sm" data-off="${r.id}">下架</button>`}
+        ${r.status === 'pending' ? `<button class="btn btn--sm btn--danger" data-no="${r.id}">驳回</button>` : ''}
+        <button class="btn btn--sm" data-editp="${r.id}">编辑</button>
+        <button class="btn btn--sm btn--danger" data-delp="${r.id}">删除</button>
+      </div></td>
+    </tr>`).join('') : '<tr><td colspan="9" class="empty">暂无内容。</td></tr>';
+  $('#tbody').addEventListener('click', async e => {
+    const q = sel => e.target.closest(sel);
+    const ok = q('[data-ok]'), no = q('[data-no]'), off = q('[data-off]'), ft = q('[data-feat]'), ed = q('[data-editp]'), dl = q('[data-delp]');
+    try {
+      if (ok) { await put(`/api/admin/posts/${ok.dataset.ok}`, { status: 'approved' }); toast('已通过,前台已展示'); renderPosts(filter); }
+      if (no) { const note = prompt('驳回原因(会展示给发布者):', ''); if (note !== null) { await put(`/api/admin/posts/${no.dataset.no}`, { status: 'rejected', review_note: note }); toast('已驳回,已通知发布者'); renderPosts(filter); } }
+      if (off && confirm('下架该内容?')) { await put(`/api/admin/posts/${off.dataset.off}`, { status: 'offline' }); toast('已下架'); renderPosts(filter); }
+      if (ft) { await put(`/api/admin/posts/${ft.dataset.feat}`, { featured: Number(ft.dataset.v) }); toast('精选状态已更新'); renderPosts(filter); }
+      if (ed) openForm('posts', rows.find(x => x.id == ed.dataset.editp));
+      if (dl && confirm('删除该内容?此操作不可恢复。')) { await del(`/api/admin/posts/${dl.dataset.delp}`); renderPosts(filter); }
+    } catch (err) { alert(err.message); }
+  });
+}
+
+/* ================= 订阅邮箱 ================= */
+async function renderSubscribers() {
+  main.innerHTML = `
+    <div class="topbar">
+      <div><h2>订阅邮箱</h2><p class="sub">前台订阅表单收集的邮箱。可导出 CSV 用于群发邮件(Excel 可直接打开)。</p></div>
+      <a class="btn btn--solid" href="/api/admin/export/csv/subscribers">导出全部邮箱 (CSV)</a>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <input id="sb-q" placeholder="搜索邮箱 / 称呼…" style="width:240px">
+      <button class="btn btn--sm btn--solid" id="sb-go">搜索</button>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>邮箱</th><th>称呼</th><th>状态</th><th>订阅时间</th><th style="width:1%">操作</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="6" class="empty">加载中…</td></tr></tbody>
+    </table></div>`;
+  const load = async () => {
+    const qs = new URLSearchParams();
+    const kw = $('#sb-q').value.trim();
+    if (kw) qs.set('q', kw);
+    const rows = await api('/api/admin/subscribers?' + qs);
+    $('#tbody').innerHTML = rows.length ? rows.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td><b>${esc(r.email)}</b></td>
+        <td>${esc(r.name || '—')}</td>
+        <td><span class="tag ${r.status === 'active' ? 'green' : 'red'}">${r.status === 'active' ? '已订阅' : '已退订'}</span></td>
+        <td style="white-space:nowrap">${esc((r.created_at || '').slice(0, 16))}</td>
+        <td><button class="btn btn--sm btn--danger" data-del="${r.id}">删除</button></td>
+      </tr>`).join('') : '<tr><td colspan="6" class="empty">暂无订阅。</td></tr>';
+  };
+  $('#sb-go').addEventListener('click', load);
+  $('#sb-q').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+  $('#tbody').addEventListener('click', async e => {
+    const dl = e.target.closest('[data-del]');
+    if (dl && confirm('删除这个订阅邮箱?')) { await del(`/api/admin/subscribers/${dl.dataset.del}`); load(); }
+  });
+  load();
+}
+
+/* ================= 留言 ================= */
+const TYPE_LABEL = { general: '预约洽谈', agent: '专家留言', property: '房源咨询', subscribe: '订阅', service_apply: '商户入驻申请', vendor: '入驻方留言' };
+/* 轻量操作提示(替代部分 alert) */
+function toast(msg) {
+  let t = $('#toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--espresso);color:#EFE9DA;padding:11px 26px;font-size:13.5px;letter-spacing:.08em;z-index:99;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:0 16px 40px -20px rgba(0,0,0,.5)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.style.opacity = '0', 2200);
+}
+async function renderEnquiries() {
+  main.innerHTML = '<h2>客户留言</h2><p class="sub">来自网站各处的咨询、留言与订阅。</p><div id="elist"><div class="empty">加载中…</div></div>';
+  const rows = await api('/api/admin/enquiries');
+  refreshBadge();
+  $('#elist').innerHTML = rows.length ? rows.map(r => `
+    <div class="msgcard${r.is_read ? '' : ' unread'}">
+      <div class="mh">
+        <div>
+          <span class="tag">${TYPE_LABEL[r.type] || esc(r.type)}</span>
+          <span class="who"> ${esc(r.name || '(未留名)')}</span>
+          <span class="meta">${[r.phone, r.email].filter(Boolean).map(esc).join(' · ')}</span>
+        </div>
+        <div class="meta">${esc(r.created_at)}</div>
+      </div>
+      ${r.agent_name ? `<div class="meta">→ 留言给专家:${esc(r.agent_name)}</div>` : ''}
+      ${r.property_title ? `<div class="meta">→ 咨询房源:${esc(r.property_title)}</div>` : ''}
+      ${r.message ? `<p>${esc(r.message)}</p>` : ''}
+      <div class="rowbtns" style="margin-top:12px">
+        ${r.is_read ? '' : `<button class="btn btn--sm" data-read="${r.id}">标为已读</button>`}
+        <button class="btn btn--sm btn--danger" data-del="${r.id}">删除</button>
+      </div>
+    </div>`).join('') : '<div class="empty">暂无留言。</div>';
+  $('#elist').addEventListener('click', async e => {
+    const rd = e.target.closest('[data-read]'), dl = e.target.closest('[data-del]');
+    if (rd) { await put(`/api/admin/enquiries/${rd.dataset.read}/read`, {}); renderEnquiries(); }
+    if (dl && confirm('删除这条留言?')) { await del(`/api/admin/enquiries/${dl.dataset.del}`); renderEnquiries(); }
+  });
+}
+
+/* ================= 设置 ================= */
+async function renderSettings() {
+  main.innerHTML = `
+    <h2>设置</h2><p class="sub">管理员密码、站点信息、邮件通知与数据备份。</p>
+    <div class="tablewrap" style="max-width:560px;padding:30px;margin-bottom:26px">
+      <h3 style="font-family:var(--serif);font-size:18px;margin-bottom:6px">数据导出 / 备份</h3>
+      <p class="sub" style="margin-bottom:18px">建议定期下载完整备份并妥存。备份文件即完整数据库,可直接恢复使用。</p>
+      <a class="btn btn--solid" href="/api/admin/export/db" style="margin-bottom:16px">下载完整数据库备份 (.sqlite)</a>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        ${[['properties','房源'],['agents','专家'],['news','资讯'],['videos','视频'],['schools','学校'],['users','用户'],['posts','内容'],['vendors','入驻方'],['subscribers','订阅邮箱'],['enquiries','留言']]
+          .map(([t,l]) => `<a class="btn btn--sm" href="/api/admin/export/csv/${t}">${l} CSV</a>`).join('')}
+      </div>
+    </div>
+    <div class="tablewrap" style="max-width:560px;padding:30px;margin-bottom:26px">
+      <h3 style="font-family:var(--serif);font-size:18px;margin-bottom:18px">修改密码</h3>
+      <form id="pw-form">
+        <div class="f"><label>原密码</label><input type="password" name="old_password" required style="margin-bottom:14px"></div>
+        <div class="f"><label>新密码(至少 6 位)</label><input type="password" name="new_password" required minlength="6" style="margin-bottom:14px"></div>
+        <button class="btn btn--solid" type="submit">保存新密码</button>
+      </form>
+    </div>
+    <div class="tablewrap" style="max-width:560px;padding:30px">
+      <h3 style="font-family:var(--serif);font-size:18px;margin-bottom:6px">站点与邮件通知</h3>
+      <p class="sub" style="margin-bottom:18px">站点 URL 用于 sitemap 与分享链接。SMTP 填好后即可接入邮件通知(当前版本预留接口,站内通知始终生效)。</p>
+      <form id="st-form">
+        <div class="f"><label>站点 URL(如 https://thepoint.co.nz)</label><input name="site_url" style="margin-bottom:14px"></div>
+        <div class="f"><label>SMTP 服务器</label><input name="smtp_host" placeholder="smtp.example.com" style="margin-bottom:14px"></div>
+        <div class="f"><label>SMTP 端口</label><input name="smtp_port" placeholder="465" style="margin-bottom:14px"></div>
+        <div class="f"><label>SMTP 账号</label><input name="smtp_user" style="margin-bottom:14px"></div>
+        <div class="f"><label>SMTP 密码</label><input type="password" name="smtp_pass" style="margin-bottom:14px"></div>
+        <div class="f"><label>发件人(From)</label><input name="smtp_from" placeholder="THE POINT 一点 <no-reply@thepoint.co.nz>" style="margin-bottom:14px"></div>
+        <button class="btn btn--solid" type="submit">保存设置</button>
+      </form>
+    </div>`;
+  $('#pw-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+      await post('/api/admin/change-password', { old_password: f.get('old_password'), new_password: f.get('new_password') });
+      toast('密码已修改');
+      e.target.reset();
+    } catch (err) { alert(err.message); }
+  });
+  try {
+    const st = await api('/api/admin/settings');
+    for (const [k, v] of Object.entries(st)) {
+      const inp = $(`#st-form [name="${k}"]`);
+      if (inp) inp.value = v;
+    }
+  } catch (e) {}
+  $('#st-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const body = {};
+    new FormData(e.target).forEach((v, k) => body[k] = v);
+    try { await put('/api/admin/settings', body); toast('设置已保存'); }
+    catch (err) { alert(err.message); }
+  });
+}
+
+/* ================= 启动 ================= */
+api('/api/admin/me').then(r => showApp(r.username)).catch(() => showLogin());
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一点服务 · THE POINT</title>
+<meta name="description" content="一点服务 — 围绕高端居所的甄选服务名录:建材、家具、Staging、维修、清洁、园艺、搬家。">
+<meta property="og:site_name" content="THE POINT 一点">
+<meta property="og:type" content="website">
+<meta property="og:title" content="一点服务 · THE POINT">
+<meta property="og:description" content="搬家、清洁、园艺、建材等精选服务商户名录。Curated local services directory.">
+<meta property="og:image" content="media/logo.svg">
+<link rel="icon" href="media/logo.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="services">
+
+<header class="site-header">
+  <a class="brand" href="index.html"><img src="media/logo.svg" alt="THE POINT 一点"></a>
+  <nav class="nav">
+    <a href="index.html">首页<span class="en">Home</span></a>
+    <a href="properties.html">一点房产<span class="en">Estate</span></a>
+    <a href="experts.html">一点专家<span class="en">Experts</span></a>
+    <a href="news.html">一点资讯<span class="en">Journal</span></a>
+    <a href="partners.html">一点伙伴<span class="en">Partners</span></a>
+    <a class="active" href="services.html">一点服务<span class="en">Services</span></a>
+    <a class="btn btn--ghost nav-cta" href="index.html#contact">预约洽谈</a>
+  </nav>
+  <button class="burger" aria-label="菜单"><span></span><span></span><span></span></button>
+</header>
+<div class="mobile-nav">
+  <button class="close" aria-label="关闭">&times;</button>
+  <a href="index.html">首页 Home</a>
+  <a href="properties.html">一点房产 Estate</a>
+  <a href="experts.html">一点专家 Experts</a>
+  <a href="news.html">一点资讯 Journal</a>
+  <a href="partners.html">一点伙伴 Partners</a>
+  <a href="services.html">一点服务 Services</a>
+  <a class="btn btn--ghost" href="index.html#contact">预约洽谈</a>
+</div>
+
+<section class="page-top page-top--banner" style="--img:url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=2000&q=80')">
+  <div class="pt-frame"></div>
+  <div class="wrap">
+    <p class="eyebrow line reveal">The Directory</p>
+    <h1 class="display reveal d1">一点服务</h1>
+    <div class="divider center reveal d1"></div>
+    <p class="lead-dim reveal d2" style="max-width:54ch;margin:0 auto">围绕居所的每一件小事——建材、家具、布置、维护、搬迁——皆有可托付之人。</p>
+  </div>
+</section>
+
+<section class="pad-sm" style="padding-top:34px">
+  <div class="wrap">
+    <div class="svc-tabs reveal in" id="svc-tabs"></div>
+    <div class="svc-grid" id="svc-grid">
+      <p style="grid-column:1/-1;text-align:center;color:var(--ink-3);padding:60px 0">加载中…</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 入驻申请 ===== -->
+<section class="cta-band" id="join">
+  <div class="wrap reveal">
+    <p class="eyebrow line">Join the Directory</p>
+    <h2 class="display">成为一点服务商户</h2>
+    <p>若您的服务同样注重品质,欢迎入驻一点服务名录,触达一点的高端客户群体。提交后我们将与您联系洽谈合作细节。</p>
+    <div class="pd-enquiry" style="max-width:560px;margin:0 auto;text-align:left">
+      <form data-api="/api/enquiries">
+        <input type="hidden" name="type" value="service_apply">
+        <input name="name" placeholder="商户 / 联系人名称" required>
+        <input name="phone" placeholder="联系电话" required>
+        <input name="email" type="email" placeholder="邮箱">
+        <textarea name="message" rows="4" placeholder="请简单介绍您的业务(类别、服务范围等)" required></textarea>
+        <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center">申请入驻</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand"><img src="media/logo-light.svg" alt="THE POINT 一点"><p>一点 The Point — 为少数人甄选的高端房产与城市生活。</p></div>
+      <div><h4>导览</h4><a href="index.html">首页</a><a href="properties.html">一点房产</a><a href="experts.html">一点专家</a><a href="news.html">一点资讯</a><a href="partners.html">一点伙伴</a><a href="services.html">一点服务</a></div>
+      <div><h4>服务</h4><a href="#">高端置业</a><a href="#">资产出售</a><a href="#">私人顾问</a><a href="partners.html">合作伙伴</a></div>
+      <div><h4>联系</h4><p><a href="tel:+6494485258">09 448 5258</a></p><p><a href="mailto:enquiry@thepoint.co.nz">enquiry@thepoint.co.nz</a></p><p>Suite 3, 227A Dairy Flat Highway,<br>Albany, Auckland</p></div>
+    </div>
+  </div>
+  <div class="footer-bottom"><span>© 2026 THE POINT 一点. 版权所有.</span><span><a href="/admin/">管理入口</a> · <a href="privacy.html">隐私声明</a> · <a href="disclaimer.html">免责声明</a></span></div>
+</footer>
+
+<script src="demo.js"></script>
+<script src="i18n.js"></script>
+<script src="script.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

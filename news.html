@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一点资讯 · THE POINT</title>
+<meta name="description" content="一点资讯 — 高端房产市场洞察、生活方式与招租公告。">
+<meta property="og:site_name" content="THE POINT 一点">
+<meta property="og:type" content="website">
+<meta property="og:title" content="一点资讯 · THE POINT">
+<meta property="og:description" content="新西兰地产市场洞察与城市生活资讯,中英双语。Market insights and city stories, bilingual.">
+<meta property="og:image" content="media/logo.svg">
+<link rel="icon" href="media/logo.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="news">
+
+<header class="site-header">
+  <a class="brand" href="index.html"><img src="media/logo.svg" alt="THE POINT 一点"></a>
+  <nav class="nav">
+    <a href="index.html">首页<span class="en">Home</span></a>
+    <a href="properties.html">一点房产<span class="en">Estate</span></a>
+    <a href="experts.html">一点专家<span class="en">Experts</span></a>
+    <a class="active" href="news.html">一点资讯<span class="en">Journal</span></a>
+    <a href="partners.html">一点伙伴<span class="en">Partners</span></a>
+    <a href="services.html">一点服务<span class="en">Services</span></a>
+    <a class="btn btn--ghost nav-cta" href="index.html#contact">预约洽谈</a>
+  </nav>
+  <button class="burger" aria-label="菜单"><span></span><span></span><span></span></button>
+</header>
+<div class="mobile-nav">
+  <button class="close" aria-label="关闭">&times;</button>
+  <a href="index.html">首页 Home</a>
+  <a href="properties.html">一点房产 Estate</a>
+  <a href="experts.html">一点专家 Experts</a>
+  <a href="news.html">一点资讯 Journal</a>
+  <a href="partners.html">一点伙伴 Partners</a>
+  <a href="services.html">一点服务 Services</a>
+  <a class="btn btn--ghost" href="index.html#contact">预约洽谈</a>
+</div>
+
+<section class="page-top page-top--banner" style="--img:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=2000&q=80')">
+  <div class="pt-frame"></div>
+  <div class="wrap">
+    <p class="eyebrow line reveal">The Journal</p>
+    <h1 class="display reveal d1">一点资讯</h1>
+    <div class="divider center reveal d1"></div>
+    <p class="lead-dim reveal d2" style="max-width:52ch;margin:0 auto">市场洞察、生活方式与招商招租，尽在一点。</p>
+  </div>
+</section>
+
+<section class="pad-sm" style="padding-top:40px">
+  <div class="wrap">
+    <div class="news-layout">
+
+      <div class="nlist" id="nlist">
+        <p style="color:var(--ink-3);padding:40px 0">加载中…</p>
+        <div class="center" style="margin-top:40px" id="news-more-wrap"><a class="btn" href="#" id="news-more">加载更多</a></div>
+      </div>
+
+      <!-- sidebar -->
+      <aside>
+        <div class="ad reveal">
+          <p class="eyebrow">Leasing · 招租</p>
+          <h4>中心商圈旗舰展厅</h4>
+          <p>Auckland CBD 核心地段，420㎡ 临街展厅，诚邀高端品牌入驻，享一点全渠道曝光。</p>
+          <a class="btn btn--solid" href="index.html#contact">咨询招租</a>
+        </div>
+
+        <div class="aside-block reveal d1">
+          <h4>广告招租</h4>
+          <p style="margin-bottom:16px">一点资讯为合作伙伴提供高端、精准的品牌展示位。</p>
+          <a class="more" href="index.html#contact" style="display:inline-block;color:var(--accent-deep)">了解合作 →</a>
+        </div>
+
+        <div class="aside-block reveal d2">
+          <h4>热门话题</h4>
+          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)">海景住宅</a>
+          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)">资产配置</a>
+          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)">跨境置业</a>
+          <a href="#" style="display:block;padding:9px 0">建筑设计</a>
+        </div>
+
+        <div class="aside-block reveal d3" style="text-align:center">
+          <h4>订阅一点</h4>
+          <p style="margin-bottom:16px">每月一封，精选市场洞察直达邮箱。</p>
+          <form data-api="/api/enquiries">
+            <input type="hidden" name="type" value="subscribe">
+            <input type="email" name="email" required placeholder="您的邮箱" style="width:100%;padding:13px;margin-bottom:12px;font-family:var(--sans)">
+            <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center">订&nbsp;阅</button>
+          </form>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand"><img src="media/logo-light.svg" alt="THE POINT 一点"><p>一点 The Point — 为少数人甄选的高端房产与城市生活。</p></div>
+      <div><h4>导览</h4><a href="index.html">首页</a><a href="properties.html">一点房产</a><a href="experts.html">一点专家</a><a href="news.html">一点资讯</a><a href="partners.html">一点伙伴</a><a href="services.html">一点服务</a></div>
+      <div><h4>服务</h4><a href="#">高端置业</a><a href="#">资产出售</a><a href="#">私人顾问</a><a href="partners.html">合作伙伴</a></div>
+      <div><h4>联系</h4><p><a href="tel:+6494485258">09 448 5258</a></p><p><a href="mailto:enquiry@thepoint.co.nz">enquiry@thepoint.co.nz</a></p><p>Suite 3, 227A Dairy Flat Highway,<br>Albany, Auckland</p></div>
+    </div>
+  </div>
+  <div class="footer-bottom"><span>© 2026 THE POINT 一点. 版权所有.</span><span><a href="/admin/">管理入口</a> · <a href="privacy.html">隐私声明</a> · <a href="disclaimer.html">免责声明</a></span></div>
+</footer>
+
+<script src="demo.js"></script>
+<script src="i18n.js"></script>
+<script src="script.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

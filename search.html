@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全站搜索 · THE POINT 一点</title>
+<meta name="description" content="搜索一点平台上的房源、入驻方、生活信息与资讯。Search properties, providers, posts and stories on The Point.">
+<meta property="og:site_name" content="THE POINT 一点">
+<meta property="og:type" content="website">
+<meta property="og:title" content="全站搜索 · THE POINT 一点">
+<meta property="og:description" content="搜索一点平台上的房源、入驻方、生活信息与资讯。Search The Point.">
+<meta property="og:image" content="media/logo.svg">
+<link rel="icon" href="media/logo.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="search">
+
+<header class="site-header">
+  <a class="brand" href="index.html"><img src="media/logo.svg" alt="THE POINT 一点"></a>
+  <nav class="nav"><a href="index.html">首页<span class="en">Home</span></a></nav>
+  <button class="burger" aria-label="菜单"><span></span><span></span><span></span></button>
+</header>
+<div class="mobile-nav"><button class="close" aria-label="关闭">&times;</button></div>
+
+<main>
+<section class="page-top" style="padding-bottom:24px">
+  <div class="wrap" style="max-width:760px">
+    <p class="eyebrow line reveal in">Search</p>
+    <h1 class="section-title reveal in" style="margin-top:8px" id="search-title">全站搜索</h1>
+    <form id="search-form" class="search-big reveal in" role="search">
+      <input name="q" id="search-input" placeholder="搜索房源、入驻方、二手、活动、资讯…" autocomplete="off" autofocus>
+      <button class="btn btn--solid" type="submit" id="search-btn">搜 索</button>
+    </form>
+  </div>
+</section>
+
+<section class="pad-sm" style="padding-top:0">
+  <div class="wrap" id="search-results"></div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-bottom"><span>© 2026 THE POINT 一点. 版权所有.</span><span><a href="privacy.html">隐私声明</a> · <a href="disclaimer.html">免责声明</a></span></div>
+</footer>
+
+<script src="demo.js"></script>
+<script src="i18n.js"></script>
+<script src="script.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

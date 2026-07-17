@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 / 注册 · THE POINT 一点</title>
+<meta name="description" content="注册一点账号,发布二手闲置,申请商家入驻。Join The Point.">
+<meta property="og:site_name" content="THE POINT 一点">
+<meta property="og:type" content="website">
+<meta property="og:title" content="登录 / 注册 · THE POINT 一点">
+<meta property="og:description" content="注册一点账号,发布二手闲置,申请商家入驻。Join The Point.">
+<meta property="og:image" content="media/logo.svg">
+<link rel="icon" href="media/logo.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="account">
+
+<header class="site-header">
+  <a class="brand" href="index.html"><img src="media/logo.svg" alt="THE POINT 一点"></a>
+  <nav class="nav"><a href="index.html">首页<span class="en">Home</span></a></nav>
+  <button class="burger" aria-label="菜单"><span></span><span></span><span></span></button>
+</header>
+<div class="mobile-nav"><button class="close" aria-label="关闭">&times;</button></div>
+
+<section class="pad page-top" style="padding-top:130px;min-height:70vh">
+  <div class="wrap" style="max-width:440px">
+    <div class="auth-card reveal in">
+      <div class="auth-tabs">
+        <button class="on" id="tab-login">登 录</button>
+        <button id="tab-register">注 册</button>
+      </div>
+      <p class="err" id="auth-err"></p>
+      <form id="login-form">
+        <label class="fld"><span>邮箱 Email</span>
+          <input name="email" type="email" placeholder="you@example.com" required autocomplete="email"></label>
+        <label class="fld"><span>密码 Password</span>
+          <div class="pw-wrap">
+            <input name="password" type="password" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="pw-eye" aria-label="显示密码" tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+            </button>
+          </div></label>
+        <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center;margin-top:6px">登 录</button>
+      </form>
+      <form id="register-form" style="display:none">
+        <label class="fld"><span>您的称呼 Name</span>
+          <input name="name" placeholder="如何称呼您"></label>
+        <label class="fld"><span>邮箱 Email</span>
+          <input name="email" type="email" placeholder="you@example.com" required autocomplete="email"></label>
+        <label class="fld"><span>联系电话 Phone(选填)</span>
+          <input name="phone" placeholder="021 000 0000"></label>
+        <label class="fld"><span>设置密码 Password(至少 6 位)</span>
+          <div class="pw-wrap">
+            <input name="password" type="password" placeholder="至少 6 位" required minlength="6" autocomplete="new-password">
+            <button type="button" class="pw-eye" aria-label="显示密码" tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+            </button>
+          </div></label>
+        <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center;margin-top:6px">创建账号</button>
+      </form>
+      <p class="auth-note">注册即可发布二手闲置信息;商家与顾问可进一步<a href="join.html">申请入驻</a>。</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-bottom"><span>© 2026 THE POINT 一点. 版权所有.</span><span><a href="privacy.html">隐私声明</a> · <a href="disclaimer.html">免责声明</a></span></div>
+</footer>
+
+<script src="demo.js"></script>
+<script src="i18n.js"></script>
+<script src="script.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

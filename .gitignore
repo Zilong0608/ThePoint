@@ -1,0 +1,15 @@
+# 依赖(clone 后 npm install 重新生成)
+node_modules/
+
+# 数据库(含用户数据与管理员密码,绝不上传)
+data.sqlite
+data.sqlite-shm
+data.sqlite-wal
+.backup-*.sqlite
+
+# 用户上传的图片:演示站需要显示,所以要进仓库(如介意公开可改回忽略)
+# uploads/
+
+# 本地素材与文档(不需要进仓库,按需删除此行)
+素材/
+一点平台操作手册.docx
