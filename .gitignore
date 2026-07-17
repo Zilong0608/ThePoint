@@ -1,6 +1,9 @@
 # 依赖(clone 后 npm install 重新生成)
 node_modules/
 
+# 系统残留文件
+.fuse_hidden*
+
 # 数据库(含用户数据与管理员密码,绝不上传)
 data.sqlite
 data.sqlite-shm
