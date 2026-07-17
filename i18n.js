@@ -92,6 +92,7 @@
     if (_sections) return _sections;
     try {
       sessionStorage.removeItem('tp_sections'); // 清理历史缓存
+      if (window.DEMO_API) { _sections = await window.DEMO_API('/api/sections'); return _sections; } // 静态演示模式
       const res = await fetch('/api/sections');
       _sections = await res.json();
     } catch (e) { _sections = _sections || []; }
@@ -101,6 +102,7 @@
   let _user;
   async function user() {
     if (_user !== undefined) return _user;
+    if (window.DEMO_API) { _user = null; return _user; } // 静态演示模式:视为未登录
     try {
       const res = await fetch('/api/auth/me');
       _user = res.ok ? await res.json() : null;
