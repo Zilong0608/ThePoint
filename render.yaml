@@ -9,7 +9,7 @@ services:
     buildCommand: npm ci --omit=dev
     startCommand: npm start
     healthCheckPath: /healthz
-    autoDeployTrigger: off
+    autoDeployTrigger: "off"
     disk:
       name: thepoint-data
       mountPath: /var/data
