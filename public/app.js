@@ -10,6 +10,9 @@
   const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const param = k => new URLSearchParams(location.search).get(k);
+  const hasChinese = value => /[\u3400-\u9fff]/.test(String(value || ''));
+  const isChineseOriginal = (record, field) => TP.lang==='en' && !String(record[field+'_en'] || '').trim() && hasChinese(record[field+'_zh'] ?? record[field]);
+  const uiError = (error, english) => TP.lang==='en' && hasChinese(error.message) ? english : error.message;
 
   async function api(url, opts) {
     const res = await fetch(url, opts);
@@ -47,7 +50,7 @@
 
   function propertyPrice(p) {
     const label=priceL(p.price_label || (p.price_value != null ? 'NZ$'+Number(p.price_value).toLocaleString('en-NZ') : '价格待询'));
-    if(p.listing_kind!=='rent' || !/\d/.test(label) || /\/(?:周|月|week|month)|per\s+(?:week|month)|p[wm]/i.test(label))return label;
+    if(p.listing_kind!=='rent' || !/\d/.test(label) || /\/\s*(?:周|月|week|month)|per\s+(?:week|month)|p[wm]/i.test(label))return label;
     return label+(TP.lang==='en' ? (p.rent_period==='month'?' / month':' / week') : (p.rent_period==='month'?' / 月':' / 周'));
   }
   let favoriteIds = new Set();
@@ -139,7 +142,7 @@
         const btn = $('button[type=submit]', f) || $('button', f);
         const old = btn ? btn.textContent : '';
         try {
-          if (btn) { btn.disabled = true; btn.textContent = '发送中…'; }
+          if (btn) { btn.disabled = true; btn.textContent = TP.t('sending'); }
           const body = {};
           new FormData(f).forEach((v, k) => body[k] = v);
           /* 带上来源归因,后台才知道这条线索是哪个广告带来的 */
@@ -156,10 +159,10 @@
           feedback.textContent=body.type==='viewing' ? (TP.lang==='en'?'Request received. We will contact you to confirm the viewing time.':'预约意向已提交，我们会联系您确认看房时间。') : (TP.lang==='en'?'Message sent.':'留言已发送。');
           f.reset();
           f.dispatchEvent(new Event('reset-complete'));
-          if (btn) btn.textContent = '已发送 ✓';
+          if (btn) btn.textContent = TP.t('sent');
           setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = old; } }, 2500);
         } catch (err) {
-          alert(err.message);
+          alert(uiError(err,'Unable to send your message. Please check your details and try again.'));
           if (btn) { btn.disabled = false; btn.textContent = old; }
         }
       });
@@ -202,7 +205,7 @@
         mapStatus.textContent=en?`${data.items.length} homes shown on map. ${data.unmapped} homes awaiting location confirmation (still available in the list).`:`地图显示 ${data.items.length} 套房源；${data.unmapped} 套尚未确认位置，仍可在列表查看。`;
         if(!data.total)mapStatus.textContent=en?'No homes match your search. Try another suburb or adjust the filters.':'暂无符合条件的房源，请更换地区或调整筛选条件。';
         if(data.truncated)mapStatus.textContent+=en?' First 1,000 locations shown; narrow your search to see more.':' 当前最多显示 1,000 个位置，请缩小搜索范围。';
-      }catch(error){if(epoch===loadEpoch)mapStatus.textContent=(en?'Map unavailable; you can still browse the list. ':'地图暂时不可用，仍可查看列表。 ')+error.message;}
+      }catch(error){if(epoch===loadEpoch)mapStatus.textContent=en?'Map unavailable; you can still browse the list.':('地图暂时不可用，仍可查看列表。 '+error.message);}
     }
     function setView(view){
       selectedView=view;
@@ -270,7 +273,7 @@
       if (reset) { pageNo = 1; lastQuery = collect();mapData=null;saveSearchUrl();updateMap(epoch); }
       const qs = new URLSearchParams({ ...lastQuery, page: pageNo, limit: 12 });
       let data;
-      try {data=await api('/api/properties?' + qs);}catch(error){if(epoch===loadEpoch)countEl.textContent=error.message;return;}
+      try {data=await api('/api/properties?' + qs);}catch(error){if(epoch===loadEpoch)countEl.textContent=uiError(error,'Unable to load homes. Please try again.');return;}
       if(epoch!==loadEpoch)return;
       const html = data.items.map(propCard).join('');
       if (reset) grid.innerHTML = html || `<p style="grid-column:1/-1;text-align:center;color:var(--ink-3);padding:60px 0">${en ? 'No homes match your search.' : '暂无符合条件的房源'}</p>`;
@@ -313,11 +316,11 @@
   async function pageProperty() {
     const id = param('id');
     const box = $('#property-detail');
-    if (!id) { box.innerHTML = '<p class="center" style="padding:80px 0">未指定房源</p>'; return; }
+    if (!id) { box.innerHTML = `<p class="center" style="padding:80px 0">${TP.lang==='en'?'No property selected.':'未指定房源'}</p>`; return; }
     let p;
     try { p = await api('/api/properties/' + id); }
-    catch (e) { box.innerHTML = `<p style="text-align:center;padding:80px 0;color:var(--ink-3)">${esc(e.message)}</p>`; return; }
-    setMeta(`${TP.L(p, 'title')} · THE POINT 一点`, TP.L(p, 'description') || `${p.address} ${p.suburb} ${p.city}`, p.images[0]);
+    catch (e) { box.innerHTML = `<p style="text-align:center;padding:80px 0;color:var(--ink-3)">${esc(uiError(e,'This property is unavailable.'))}</p>`; return; }
+    setMeta(`${TP.L(p, 'title')} · ${TP.lang==='en'?'THE POINT':'THE POINT 一点'}`, TP.L(p, 'description') || `${p.address} ${p.suburb} ${p.city}`, p.images[0]);
     const pen = TP.lang === 'en';
     const pstat = pen ? ({ '在售': 'For Sale', '已售': 'Sold', '在租':'For Rent','已租':'Let', '下架': 'Off Market' }[p.status] || p.status) : p.status;
     const imgs = p.images.length ? p.images : ['media/logo.svg'];
@@ -333,23 +336,24 @@
           <div class="ltop" style="padding:0 0 14px"><span>${esc(pstat)}${p.open_home ? ' · Open Home ' + esc(p.open_home) : ''}</span><b style="font-size:22px">${esc(propertyPrice(p))}</b></div>
           <h1 class="section-title" style="margin-bottom:6px">${esc(TP.L(p, 'title'))}</h1>
           <p class="laddr" style="font-size:16px;margin-bottom:18px">${esc(p.address)}${p.suburb ? ', ' + esc(p.suburb) : ''}${p.city ? ', ' + esc(p.city) : ''}</p>
-          <div class="lspecs pd-specs">${specsHTML(p)}${p.floor_area && p.land_area ? `<span>${ICON.area}室内 ${esc(p.floor_area)}</span>` : ''}</div>
+          <div class="lspecs pd-specs">${specsHTML(p)}${p.floor_area && p.land_area ? `<span>${ICON.area}${pen?'Floor area':'室内'} ${esc(p.floor_area)}</span>` : ''}</div>
           ${p.listing_kind==='rent' ? `<div class="rental-facts">${p.available_from ? `<span>${pen?'Available from':'可入住日期'}：${esc(p.available_from)}</span>` : ''}${p.bond != null ? `<span>${pen?'Bond':'押金'}：NZ$${esc(Number(p.bond).toLocaleString('en-NZ'))}</span>`:''}</div>`:''}
           ${p.updated_at ? `<p class="property-updated">${pen?'Updated':'信息更新'}：${esc(p.updated_at.slice(0,10))}</p>`:''}
           <div class="divider"></div>
-          <div class="pd-desc">${esc(TP.L(p, 'description') || (pen ? 'Contact The Point for details.' : '详情请垂询一点专家。')).split(/\n+/).map(t => `<p>${t}</p>`).join('')}</div>
+          ${isChineseOriginal(p,'description')?`<p class="translation-note">${TP.t('originalChinese')}</p>`:''}
+          <div class="pd-desc"${isChineseOriginal(p,'description')?' lang="zh-CN"':''}>${esc(TP.L(p, 'description') || (pen ? 'Contact The Point for details.' : '详情请垂询一点专家。')).split(/\n+/).map(t => `<p>${t}</p>`).join('')}</div>
           ${(p.floorplans || []).length ? `<div class="divider"></div><h2 class="floorplan-heading">${pen?'Floor plans':'户型图'}</h2><div class="floorplan-grid">${p.floorplans.map((src,i)=>`<button type="button" data-floorplan="${i}" aria-label="${pen?'View floor plan':'查看户型图'} ${i+1}"><img src="${esc(src)}" alt="${pen?'Floor plan':'户型图'} ${i+1}" loading="lazy"></button>`).join('')}</div>`:''}
           ${p.tour_url ? `<div class="divider"></div>
           <p class="eyebrow" style="margin-bottom:14px">${pen ? '3D Tour' : '3D Tour · 实景看房'}</p>
           <div class="pd-map pd-tour"><iframe src="${esc(p.tour_url)}" loading="lazy" allowfullscreen allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen"></iframe></div>` : ''}
           ${p.address ? `<div class="divider"></div>
           <p class="eyebrow" style="margin-bottom:14px">${pen ? 'Location' : 'Location · 位置'}</p>
-          <div class="pd-map"><iframe src="https://www.google.com/maps?q=${encodeURIComponent([p.address, p.suburb, p.city, 'New Zealand'].filter(Boolean).join(', '))}&output=embed&hl=zh-CN" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>` : ''}
+          <div class="pd-map"><iframe src="https://www.google.com/maps?q=${encodeURIComponent([p.address, p.suburb, p.city, 'New Zealand'].filter(Boolean).join(', '))}&output=embed&hl=${pen?'en':'zh-CN'}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>` : ''}
         </div>
         <aside class="pd-side">
           ${agent ? `<div class="pd-agent">
             <div class="avatar" style="background-image:url('${esc(agent.photo || 'media/logo.svg')}')"></div>
-            <span class="cat">${esc(agent.category)}</span>
+            <span class="cat">${esc(pen?({'地产':'Real estate','金融':'Finance','租务':'Rentals'}[agent.category]||agent.category):agent.category)}</span>
             <h3><a href="expert.html?id=${agent.id}">${esc(agent.name)}</a></h3>
             ${agent.email ? `<div class="arow">${ICON.mail}<a href="mailto:${esc(agent.email)}">${esc(agent.email)}</a></div>` : ''}
             ${agent.phone ? `<div class="arow">${ICON.tel}<a href="tel:${esc(agent.phone.replace(/\s/g, ''))}">${esc(agent.phone)}</a></div>` : ''}
@@ -480,24 +484,28 @@
 
   /* ---------- 资讯列表 ---------- */
   async function pageNews() {
-    const list = $('#nlist'), moreBtn = $('#news-more');
+    const list = $('#news-items'), moreBtn = $('#news-more');
+    const en=TP.lang==='en';
+    setMeta(en?'Journal · THE POINT':'一点资讯 · THE POINT',TP.t('journalLead'));
     let pageNo = 1;
     async function load() {
-      const data = await api(`/api/news?page=${pageNo}&limit=10`);
+      let data;
+      try{data=await api(`/api/news?page=${pageNo}&limit=10`);}catch(error){list.textContent=uiError(error,'Unable to load stories. Please try again.');return;}
       const html = data.items.map((n, i) => `
         <article class="item reveal in" onclick="location.href='article.html?id=${n.id}'" style="cursor:pointer">
           <div class="nthumb" style="background-image:url('${esc(n.image || 'media/logo.svg')}')"></div>
           <div>
             <h3>${esc(TP.L(n, 'title'))}</h3>
-            <p class="excerpt">${n.source_note ? `<span class="src">${esc(n.source_note)}</span> ` : ''}${esc(TP.L(n, 'excerpt'))}<a class="more" href="article.html?id=${n.id}" onclick="event.stopPropagation()">…阅读详情</a></p>
+            ${isChineseOriginal(n,'title')||isChineseOriginal(n,'excerpt')?`<p class="translation-note">${en?'Original article in Chinese.':''}</p>`:''}
+            <p class="excerpt">${TP.L(n,'source_note') ? `<span class="src"${isChineseOriginal(n,'source_note')?' lang="zh-CN"':''}>${esc(TP.L(n,'source_note'))}</span> ` : ''}${esc(TP.L(n, 'excerpt'))}<a class="more" href="article.html?id=${n.id}" onclick="event.stopPropagation()">…${TP.t('readMore')}</a></p>
             <div class="byline"><span class="bp">The Point</span><span>${esc((n.published_at || '').slice(0, 16))}</span></div>
           </div>
         </article>`).join('');
-      if (pageNo === 1) list.innerHTML = html || '<p style="color:var(--ink-3);padding:40px 0">暂无资讯</p>';
-      else $('#news-more-wrap').insertAdjacentHTML('beforebegin', html);
+      if (pageNo === 1) list.innerHTML = html || `<p style="color:var(--ink-3);padding:40px 0">${TP.t('noNews')}</p>`;
+      else list.insertAdjacentHTML('beforeend', html);
       if (moreBtn) moreBtn.parentElement.style.display = pageNo * data.limit < data.total ? '' : 'none';
     }
-    if (moreBtn) moreBtn.addEventListener('click', e => { e.preventDefault(); pageNo++; load(); });
+    if (moreBtn) moreBtn.addEventListener('click', async e => { e.preventDefault();if(moreBtn.getAttribute('aria-busy')==='true')return;moreBtn.setAttribute('aria-busy','true');pageNo++;try{await load();}finally{moreBtn.removeAttribute('aria-busy');} });
     load();
   }
 
@@ -507,15 +515,16 @@
     const box = $('#article-detail');
     let n;
     try { n = await api('/api/news/' + id); }
-    catch (e) { box.innerHTML = `<p style="text-align:center;padding:80px 0;color:var(--ink-3)">${esc(e.message)}</p>`; return; }
-    setMeta(`${TP.L(n, 'title')} · 一点资讯`, TP.L(n, 'excerpt') || TP.L(n, 'content'), n.image);
+    catch (e) { box.innerHTML = `<p style="text-align:center;padding:80px 0;color:var(--ink-3)">${esc(uiError(e,'This story is unavailable.'))}</p>`; return; }
+    setMeta(`${TP.L(n, 'title')} · ${TP.lang==='en'?'The Point Journal':'一点资讯'}`, TP.L(n, 'excerpt') || TP.L(n, 'content'), n.image);
     box.innerHTML = `
       <h1 class="art-title">${esc(TP.L(n, 'title'))}</h1>
       <div class="byline" style="margin:18px 0 6px"><span class="bp">The Point</span><span>${esc((n.published_at || '').slice(0, 16))}</span></div>
-      ${n.source_note ? `<p class="src" style="color:var(--ink-3);font-size:13px">${esc(n.source_note)} · 提示:新闻观点不代表本网立场。</p>` : ''}
+      ${TP.L(n,'source_note') ? `<p class="src" style="color:var(--ink-3);font-size:13px"><span${isChineseOriginal(n,'source_note')?' lang="zh-CN"':''}>${esc(TP.L(n,'source_note'))}</span> · ${TP.t('newsDisclaimer')}</p>` : ''}
       ${n.image ? `<div class="art-img" style="background-image:url('${esc(n.image)}')"></div>` : ''}
-      <div class="art-body article-content">${TPContent.render(TP.L(n, 'content') || TP.L(n, 'excerpt'), n.content_format)}</div>
-      <div style="margin-top:44px"><a class="btn" href="news.html">← 返回资讯</a></div>`;
+      ${isChineseOriginal(n,'content')?`<p class="translation-note">${TP.t('originalChinese')}</p>`:''}
+      <div class="art-body article-content"${isChineseOriginal(n,'content')?' lang="zh-CN"':''}>${TPContent.render(TP.L(n, 'content') || TP.L(n, 'excerpt'), n.content_format)}</div>
+      <div style="margin-top:44px"><a class="btn" href="news.html">${TP.t('backJournal')}</a></div>`;
     reveal(box);
   }
 
@@ -586,7 +595,7 @@
     if (M[s]) return M[s];
     const m = s.match(/^(.+?)\s*起$/);
     if (m) return 'from ' + m[1];
-    return s;
+    return s.replace(/\/\s*周/g,'/ week').replace(/\/\s*月/g,'/ month').replace(/每周/g,'per week').replace(/每月/g,'per month');
   }
 
   /* ---------- 加载骨架 / 空状态 / 联系方式锁 ---------- */

@@ -584,7 +584,7 @@ app.get('/api/news', (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(30, Number(req.query.limit) || 10);
   const total = db.prepare('SELECT COUNT(*) c FROM public_news WHERE visible=1').get().c;
-  const items = db.prepare('SELECT id,title,source_note,excerpt,image,published_at FROM public_news WHERE visible=1 ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?')
+  const items = db.prepare('SELECT id,title,title_en,source_note,source_note_en,excerpt,excerpt_en,image,published_at FROM public_news WHERE visible=1 ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?')
     .all(limit, (page - 1) * limit);
   res.json({ total, page, limit, items });
 });

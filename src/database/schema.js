@@ -337,6 +337,7 @@ CREATE INDEX IF NOT EXISTS idx_content_versions ON content_versions(kind,ref_id,
   addCol('properties', 'title_en', "TEXT DEFAULT ''");
   addCol('properties', 'description_en', "TEXT DEFAULT ''");
   addCol('news', 'title_en', "TEXT DEFAULT ''");
+  addCol('news', 'source_note_en', "TEXT DEFAULT ''");
   addCol('news', 'excerpt_en', "TEXT DEFAULT ''");
   addCol('news', 'content_en', "TEXT DEFAULT ''");
   addCol('agents', 'bio_en', "TEXT DEFAULT ''");

@@ -81,20 +81,20 @@
       <div class="tools">
         <select id="sort-select"><option value="new">最新上架</option><option value="price_desc">价格：由高至低</option><option value="price_asc">价格：由低至高</option><option value="featured">推荐优先</option></select>
         <div class="viewtoggle">
-          <button class="on" data-view="map" type="button" aria-pressed="true">地图找房</button>
-          <button class="on" data-view="grid"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>网格</button>
-          <button data-view="list"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10" width="18" height="3"/><rect x="3" y="16" width="18" height="3"/></svg>列表</button>
+          <button class="on" data-view="map" type="button" aria-pressed="true" data-i18n="mapView">地图找房</button>
+          <button data-view="grid" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span data-i18n="gridView">网格</span></button>
+          <button data-view="list" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10" width="18" height="3"/><rect x="3" y="16" width="18" height="3"/></svg><span data-i18n="listView">列表</span></button>
         </div>
       </div>
     </div>
 
     <div class="property-results map-view" id="property-results">
       <div class="property-map-panel" id="property-map-panel">
-        <div class="property-map-canvas" id="property-map" aria-label="房源地图"></div>
-        <div class="property-map-caption"><p id="property-map-status" role="status" aria-live="polite">正在加载房源位置…</p></div>
+        <div class="property-map-canvas" id="property-map" aria-label="房源地图" data-i18n-aria="propertyMap"></div>
+        <div class="property-map-caption"><p id="property-map-status" role="status" aria-live="polite" data-i18n="loadingLocations">正在加载房源位置…</p></div>
       </div>
     <div class="lgrid" id="plist">
-      <p style="grid-column:1/-1;text-align:center;color:var(--ink-3);padding:60px 0">加载中…</p>
+      <p data-i18n="loading" style="grid-column:1/-1;text-align:center;color:var(--ink-3);padding:60px 0">加载中…</p>
     </div>
 
     </div>

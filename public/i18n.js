@@ -70,7 +70,38 @@
     results_posts: ['信息', 'Posts'],
     results_news: ['资讯', 'Stories'],
     leaveMsg: ['给 TA 留言', 'Leave a message'],
-    loading: ['加载中…', 'Loading…']
+    loading: ['加载中…', 'Loading…'],
+    journalLead: ['市场洞察、生活方式与招商招租，尽在一点。', 'Market insights, city living and leasing opportunities, curated by The Point.'],
+    leasing: ['Leasing · 招租', 'Leasing'],
+    leasingTitle: ['中心商圈旗舰展厅', 'Flagship showroom in the CBD'],
+    leasingDescription: ['Auckland CBD 核心地段，420㎡ 临街展厅，诚邀高端品牌入驻，享一点全渠道曝光。', 'A 420 m² street-front showroom in Auckland CBD, with opportunities for premium brands and promotion through The Point.'],
+    leasingEnquiry: ['咨询招租', 'Enquire about leasing'],
+    advertising: ['广告招租', 'Advertise with us'],
+    advertisingDescription: ['一点资讯为合作伙伴提供高端、精准的品牌展示位。', 'Reach a focused audience through The Point Journal.'],
+    learnPartnership: ['了解合作 →', 'Explore partnerships →'],
+    popularTopics: ['热门话题', 'Popular topics'],
+    topicWaterfront: ['海景住宅', 'Waterfront homes'],
+    topicInvestment: ['资产配置', 'Property investment'],
+    topicOverseas: ['跨境置业', 'Buying overseas'],
+    topicArchitecture: ['建筑设计', 'Architecture'],
+    subscribeJournal: ['订阅一点', 'Subscribe to The Point'],
+    subscribeDescription: ['每月一封，精选市场洞察直达邮箱。', 'A monthly selection of market insights, delivered to your inbox.'],
+    emailPlaceholder: ['您的邮箱', 'Your email address'],
+    subscribe: ['订阅', 'Subscribe'],
+    noNews: ['暂无资讯', 'No stories published yet.'],
+    readMore: ['阅读详情', 'Read more'],
+    newsDisclaimer: ['提示：新闻观点不代表本网立场。', 'Views expressed in articles do not necessarily reflect those of The Point.'],
+    backJournal: ['← 返回资讯', '← Back to Journal'],
+    originalChinese: ['此内容暂时仅有中文版本。', 'An English translation is not available yet. The original Chinese content is shown below.'],
+    mapView: ['地图找房', 'Map'],
+    gridView: ['网格', 'Grid'],
+    listView: ['列表', 'List'],
+    propertyMap: ['房源地图', 'Property map'],
+    loadingLocations: ['正在加载房源位置…', 'Loading home locations…'],
+    sending: ['发送中…', 'Sending…'],
+    sent: ['已发送 ✓', 'Sent ✓'],
+    menu: ['菜单', 'Menu'],
+    close: ['关闭', 'Close']
   };
   const t = k => (DICT[k] || [k, k])[lang === 'en' ? 1 : 0];
 
@@ -149,7 +180,7 @@
 
     const drawer = document.querySelector('.mobile-nav');
     if (drawer) {
-      const close = '<button class="close" aria-label="关闭">&times;</button>';
+      const close = `<button class="close" aria-label="${t('close')}">&times;</button>`;
       const items = [`<a href="index.html">${t('home')}</a>`];
       secs.forEach(s => items.push(`<a href="${sectionUrl(s)}">${esc(sname(s))}</a>`));
       items.push(`<a href="search.html">${t('search')}</a>`);
@@ -193,9 +224,12 @@
       document.querySelectorAll('.site-footer a').forEach(a => {
         const href = a.getAttribute('href');
         if (A[href]) a.textContent = A[href];
+        const labels={'高端置业':'Premium homes','资产出售':'Sell your property','私人顾问':'Private advisory'};
+        if(labels[a.textContent.trim()])a.textContent=labels[a.textContent.trim()];
       });
       const fbrand = document.querySelector('.footer-brand p');
       if (fbrand) fbrand.textContent = 'The Point — One Point, All Connected.';
+      document.querySelectorAll('.brand img,.footer-brand img').forEach(image=>{image.alt='THE POINT';});
       const cright = document.querySelector('.footer-bottom span:first-child');
       if (cright) cright.textContent = '© 2026 THE POINT. All rights reserved.';
     }
@@ -210,6 +244,8 @@
   function applyDataI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label',t(el.dataset.i18nAria)); });
+    const burger=document.querySelector('.burger');if(burger)burger.setAttribute('aria-label',t('menu'));
   }
 
   document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';

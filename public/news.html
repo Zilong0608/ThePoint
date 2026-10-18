@@ -43,9 +43,9 @@
   <div class="pt-frame"></div>
   <div class="wrap">
     <p class="eyebrow line reveal">The Journal</p>
-    <h1 class="display reveal d1">一点资讯</h1>
+    <h1 class="display reveal d1" data-i18n="journal">一点资讯</h1>
     <div class="divider center reveal d1"></div>
-    <p class="lead-dim reveal d2" style="max-width:52ch;margin:0 auto">市场洞察、生活方式与招商招租，尽在一点。</p>
+    <p class="lead-dim reveal d2" data-i18n="journalLead" style="max-width:52ch;margin:0 auto">市场洞察、生活方式与招商招租，尽在一点。</p>
   </div>
 </section>
 
@@ -54,41 +54,41 @@
     <div class="news-layout">
 
       <div class="nlist" id="nlist">
-        <p style="color:var(--ink-3);padding:40px 0">加载中…</p>
-        <div class="center" style="margin-top:40px" id="news-more-wrap"><a class="btn" href="#" id="news-more">加载更多</a></div>
+        <div id="news-items"><p data-i18n="loading" style="color:var(--ink-3);padding:40px 0">加载中…</p></div>
+        <div class="center" style="margin-top:40px" id="news-more-wrap"><a class="btn" href="#" id="news-more" data-i18n="loadMore">加载更多</a></div>
       </div>
 
       <!-- sidebar -->
       <aside>
         <div data-ad-slot="news_side" data-ad-limit="3" style="margin-bottom:26px"></div>
         <div class="ad reveal">
-          <p class="eyebrow">Leasing · 招租</p>
-          <h4>中心商圈旗舰展厅</h4>
-          <p>Auckland CBD 核心地段，420㎡ 临街展厅，诚邀高端品牌入驻，享一点全渠道曝光。</p>
-          <a class="btn btn--solid" href="index.html#contact">咨询招租</a>
+          <p class="eyebrow" data-i18n="leasing">Leasing · 招租</p>
+          <h4 data-i18n="leasingTitle">中心商圈旗舰展厅</h4>
+          <p data-i18n="leasingDescription">Auckland CBD 核心地段，420㎡ 临街展厅，诚邀高端品牌入驻，享一点全渠道曝光。</p>
+          <a class="btn btn--solid" href="index.html#contact" data-i18n="leasingEnquiry">咨询招租</a>
         </div>
 
         <div class="aside-block reveal d1">
-          <h4>广告招租</h4>
-          <p style="margin-bottom:16px">一点资讯为合作伙伴提供高端、精准的品牌展示位。</p>
-          <a class="more" href="index.html#contact" style="display:inline-block;color:var(--accent-deep)">了解合作 →</a>
+          <h4 data-i18n="advertising">广告招租</h4>
+          <p style="margin-bottom:16px" data-i18n="advertisingDescription">一点资讯为合作伙伴提供高端、精准的品牌展示位。</p>
+          <a class="more" href="index.html#contact" style="display:inline-block;color:var(--accent-deep)" data-i18n="learnPartnership">了解合作 →</a>
         </div>
 
         <div class="aside-block reveal d2">
-          <h4>热门话题</h4>
-          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)">海景住宅</a>
-          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)">资产配置</a>
-          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)">跨境置业</a>
-          <a href="#" style="display:block;padding:9px 0">建筑设计</a>
+          <h4 data-i18n="popularTopics">热门话题</h4>
+          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)" data-i18n="topicWaterfront">海景住宅</a>
+          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)" data-i18n="topicInvestment">资产配置</a>
+          <a href="#" style="display:block;padding:9px 0;border-bottom:1px solid var(--line)" data-i18n="topicOverseas">跨境置业</a>
+          <a href="#" style="display:block;padding:9px 0" data-i18n="topicArchitecture">建筑设计</a>
         </div>
 
         <div class="aside-block reveal d3" style="text-align:center">
-          <h4>订阅一点</h4>
-          <p style="margin-bottom:16px">每月一封，精选市场洞察直达邮箱。</p>
+          <h4 data-i18n="subscribeJournal">订阅一点</h4>
+          <p style="margin-bottom:16px" data-i18n="subscribeDescription">每月一封，精选市场洞察直达邮箱。</p>
           <form data-api="/api/enquiries">
             <input type="hidden" name="type" value="subscribe">
-            <input type="email" name="email" required placeholder="您的邮箱" style="width:100%;padding:13px;margin-bottom:12px;font-family:var(--sans)">
-            <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center">订&nbsp;阅</button>
+            <input type="email" name="email" required placeholder="您的邮箱" data-i18n-ph="emailPlaceholder" style="width:100%;padding:13px;margin-bottom:12px;font-family:var(--sans)">
+            <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center" data-i18n="subscribe">订阅</button>
           </form>
         </div>
       </aside>

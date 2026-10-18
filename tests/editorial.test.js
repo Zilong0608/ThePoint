@@ -83,6 +83,16 @@ test('map search includes every matching location across list pages and hides of
   for(const id of [...ids,missing.data.id,hidden.data.id,rental.data.id])await request('/api/admin/properties/'+id,'DELETE',undefined,admin);
 });
 
+test('Journal APIs preserve English title, excerpt, source and body from the editor',async()=>{
+  const payload={title:'中文标题',title_en:'English headline',excerpt:'中文摘要',excerpt_en:'English summary',source_note:'中文来源',source_note_en:'Source: editorial team',content:'中文正文',content_en:'English body',visible:1};
+  const created=await request('/api/admin/news','POST',payload,admin);assert.equal(created.status,200);
+  const list=(await request('/api/news?limit=30')).data.items;
+  const item=list.find(n=>n.id===created.data.id);assert.ok(item);
+  for(const key of ['title_en','excerpt_en','source_note_en'])assert.equal(item[key],payload[key]);
+  assert.equal((await request('/api/news/'+created.data.id)).data.content_en,payload.content_en);
+  await request('/api/admin/news/'+created.data.id,'DELETE',undefined,admin);
+});
+
 test('drafts are private and editing a published article does not change the public version',async()=>{
   const before=await request('/api/news/1');assert.equal(before.status,200);
   assert.equal((await request('/api/admin/drafts')).status,401);

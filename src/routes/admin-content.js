@@ -14,7 +14,7 @@ const TABLES = {
     required: ['name']
   },
   news: {
-    fields: ['title', 'title_en', 'source_note', 'excerpt', 'excerpt_en', 'content', 'content_en', 'content_format', 'image', 'published_at', 'scheduled_at', 'visible'],
+    fields: ['title', 'title_en', 'source_note', 'source_note_en', 'excerpt', 'excerpt_en', 'content', 'content_en', 'content_format', 'image', 'published_at', 'scheduled_at', 'visible'],
     nums: ['visible'],
     required: ['title']
   },
