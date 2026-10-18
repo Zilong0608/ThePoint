@@ -1,0 +1,31 @@
+# Deployment template only. Applying this Blueprint creates paid resources.
+services:
+  - type: web
+    name: thepoint
+    runtime: node
+    region: singapore
+    plan: 0.5c-512mb
+    numInstances: 1
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeployTrigger: off
+    disk:
+      name: thepoint-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TP_DATA_DIR
+        value: /var/data
+      - key: TP_BACKUP_DIR
+        value: /var/data/backups
+      - key: TP_AUTO_BACKUP
+        value: "1"
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: ADMIN_INITIAL_PASSWORD
+        sync: false

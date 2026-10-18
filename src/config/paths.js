@@ -1,0 +1,10 @@
+'use strict';
+const path=require('node:path');
+const fs=require('node:fs');
+const PROJECT_ROOT=path.resolve(__dirname,'../..');
+const environmentFile=path.join(PROJECT_ROOT,'.env');
+if(process.env.TP_SKIP_ENV_FILE!=='1'&&fs.existsSync(environmentFile))process.loadEnvFile(environmentFile);
+const PUBLIC_DIR=path.join(PROJECT_ROOT,'public');
+const DATA_DIR=process.env.TP_DATA_DIR?path.resolve(PROJECT_ROOT,process.env.TP_DATA_DIR):path.join(PROJECT_ROOT,'storage');
+const UPLOAD_DIR=path.join(DATA_DIR,'uploads');
+module.exports={PROJECT_ROOT,PUBLIC_DIR,DATA_DIR,UPLOAD_DIR};

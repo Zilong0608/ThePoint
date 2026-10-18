@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一点房产 · THE POINT</title>
+<meta name="description" content="一点房产 — 高端别墅、海景豪宅与城市顶层公寓的臻选清单。">
+<meta property="og:site_name" content="THE POINT 一点">
+<meta property="og:type" content="website">
+<meta property="og:title" content="臻选房源 · THE POINT 一点">
+<meta property="og:description" content="奥克兰高端房源,买卖租赁一站式。Curated homes for sale and rent in Auckland, New Zealand.">
+<meta property="og:image" content="media/logo.svg">
+<link rel="icon" href="media/logo.svg">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="property-map.css">
+</head>
+<body data-page="properties">
+
+<header class="site-header">
+  <a class="brand" href="index.html"><img src="media/logo.svg" alt="THE POINT 一点"></a>
+  <nav class="nav">
+    <a href="index.html">首页<span class="en">Home</span></a>
+    <a class="active" href="properties.html">一点房产<span class="en">Estate</span></a>
+    <a href="experts.html">一点专家<span class="en">Experts</span></a>
+    <a href="news.html">一点资讯<span class="en">Journal</span></a>
+    <a href="partners.html">一点伙伴<span class="en">Partners</span></a>
+    <a href="services.html">一点服务<span class="en">Services</span></a>
+    <a class="btn btn--ghost nav-cta" href="index.html#contact">预约洽谈</a>
+  </nav>
+  <button class="burger" aria-label="菜单"><span></span><span></span><span></span></button>
+</header>
+<div class="mobile-nav">
+  <button class="close" aria-label="关闭">&times;</button>
+  <a href="index.html">首页 Home</a>
+  <a href="properties.html">一点房产 Estate</a>
+  <a href="experts.html">一点专家 Experts</a>
+  <a href="news.html">一点资讯 Journal</a>
+  <a href="partners.html">一点伙伴 Partners</a>
+  <a href="services.html">一点服务 Services</a>
+  <a class="btn btn--ghost" href="index.html#contact">预约洽谈</a>
+</div>
+
+<section class="page-top page-top--banner" style="--img:url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=2000&q=80')">
+  <div class="pt-frame"></div>
+  <div class="wrap">
+    <p class="eyebrow line reveal">The Collection</p>
+    <h1 class="display reveal d1">一点房产</h1>
+    <div class="divider center reveal d1"></div>
+    <p class="lead-dim reveal d2" style="max-width:52ch;margin:0 auto">每一处皆经一点亲自甄选，于此开启您的下一段栖居。</p>
+  </div>
+</section>
+
+<!-- ===== SEARCH BAR ===== -->
+<section style="padding-bottom:20px">
+  <div class="wrap">
+    <form class="searchbar reveal" id="search-form" data-live>
+      <div class="search-grid">
+        <div class="field"><label>用途 · Purpose</label><select name="listing_kind"><option value="">全部用途</option><option value="sale">出售</option><option value="rent">出租</option></select></div>
+        <div class="field" data-rent-filter hidden><label>租金周期 · Rent period</label><select name="rent_period" disabled><option value="week">每周</option><option value="month">每月</option></select></div>
+        <div class="field"><label>城市 · City</label><select name="city"><option value="">所有城市</option></select></div>
+        <div class="field"><label>地区 · Suburb</label><select name="suburb"><option value="">所有地区</option></select></div>
+        <div class="field"><label>类型 · Type</label><select name="type"><option value="">所有类型</option></select></div>
+        <div class="field"><label>Open Home</label><select name="open_home"><option value="">不限</option><option value="1">仅看 Open Home</option></select></div>
+        <div class="field"><label>卧室数 · Beds</label><div class="row"><select name="beds_min"><option value="">不限</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><span>至</span><select name="beds_max"><option value="">不限</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div></div>
+        <div class="field"><label>浴室数 · Baths</label><div class="row"><select name="baths_min"><option value="">不限</option><option>1</option><option>2</option><option>3</option><option>4</option></select><span>至</span><select name="baths_max"><option value="">不限</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div></div>
+        <div class="field"><label>预期价格 · Price</label><div class="row"><input type="number" name="price_min" placeholder="不限" min="0"><span>至</span><input type="number" name="price_max" placeholder="不限" min="0"></div></div>
+        <div class="field" style="grid-column:span 2"><label>地区、地址或关键词 · Search</label><input type="search" name="q" placeholder="输入地区（如 Albany）、街道或关键词"></div>
+      </div>
+      <p class="property-price-note" id="property-price-note">价格单位为 NZD；请先选择出售或出租再比较价格。</p>
+      <div class="search-actions"><button type="submit" class="btn btn--solid">搜&nbsp;&nbsp;索</button></div>
+    </form>
+  </div>
+</section>
+
+<!-- ===== RESULTS ===== -->
+<section class="pad-sm" style="padding-top:30px">
+  <div class="wrap">
+    <div class="toolbar reveal">
+      <p class="count" id="pcount">共 <b>…</b> 套臻选房源</p>
+      <div class="tools">
+        <select id="sort-select"><option value="new">最新上架</option><option value="price_desc">价格：由高至低</option><option value="price_asc">价格：由低至高</option><option value="featured">推荐优先</option></select>
+        <div class="viewtoggle">
+          <button class="on" data-view="map" type="button" aria-pressed="true">地图找房</button>
+          <button class="on" data-view="grid"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>网格</button>
+          <button data-view="list"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10" width="18" height="3"/><rect x="3" y="16" width="18" height="3"/></svg>列表</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="property-results map-view" id="property-results">
+      <div class="property-map-panel" id="property-map-panel">
+        <div class="property-map-canvas" id="property-map" aria-label="房源地图"></div>
+        <div class="property-map-caption"><p id="property-map-status" role="status" aria-live="polite">正在加载房源位置…</p></div>
+      </div>
+    <div class="lgrid" id="plist">
+      <p style="grid-column:1/-1;text-align:center;color:var(--ink-3);padding:60px 0">加载中…</p>
+    </div>
+
+    </div>
+    <div class="center" style="margin-top:54px"><a class="btn" href="#" id="load-more">加载更多</a></div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand"><img src="media/logo-light.svg" alt="THE POINT 一点"><p>一点 The Point — 为少数人甄选的高端房产与城市生活。</p></div>
+      <div><h4>导览</h4><a href="index.html">首页</a><a href="properties.html">一点房产</a><a href="experts.html">一点专家</a><a href="news.html">一点资讯</a><a href="partners.html">一点伙伴</a><a href="services.html">一点服务</a></div>
+      <div><h4>服务</h4><a href="#">高端置业</a><a href="#">资产出售</a><a href="#">私人顾问</a><a href="partners.html">合作伙伴</a></div>
+      <div><h4>联系</h4><p><a href="tel:+6494485258">09 448 5258</a></p><p><a href="mailto:enquiry@thepoint.co.nz">enquiry@thepoint.co.nz</a></p><p>Suite 3, 227A Dairy Flat Highway,<br>Albany, Auckland</p></div>
+    </div>
+  </div>
+  <div class="footer-bottom"><span>© 2026 THE POINT 一点. 版权所有.</span><span><a href="/admin/">管理入口</a> · <a href="privacy.html">隐私声明</a> · <a href="disclaimer.html">免责声明</a></span></div>
+</footer>
+
+<script src="i18n.js"></script>
+<script src="script.js"></script>
+<script src="app.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="property-map.js"></script>
+</body>
+</html>

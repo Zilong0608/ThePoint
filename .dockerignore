@@ -1,0 +1,17 @@
+.git
+node_modules
+.npm-cache
+.env
+.env.*
+!.env.example
+storage
+.data
+.preview
+coverage
+tests
+docs
+*.log
+data.sqlite*
+uploads
+backups
+.backup-*
