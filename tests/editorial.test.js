@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const net = require('node:net');
 const { once } = require('node:events');
-const Content = require('../public/content');
+const Content = require('../public/assets/js/content');
 const root = path.resolve(__dirname,'..');
 let child, dir, base, admin, user, logs='';
 async function request(route, method='GET', body, cookie='') {
@@ -137,7 +137,18 @@ test('uploads verify bytes, normalize extension and register reusable media',asy
 });
 test('static allowlist hides source, documents and dependencies while serving editor assets',async()=>{
   for(const route of ['/server.js','/make-demo.js','/package.json','/README.md','/tests/editorial.test.js','/data.sqlite'])assert.equal((await request(route)).status,404,route);
-  for(const route of ['/','/admin/','/admin/content-tools.js','/admin/content-tools.css','/content.js','/article.html?id=1','/post.html?id=1'])assert.equal((await request(route)).status,200,route);
+  for(const route of ['/','/admin/','/admin/js/content-tools.js','/admin/css/content-tools.css','/assets/js/content.js','/article.html?id=1','/post.html?id=1'])assert.equal((await request(route)).status,200,route);
+  const publicRoot=path.join(root,'public');
+  const pages=[...fs.readdirSync(publicRoot).filter(name=>name.endsWith('.html')).map(name=>'/'+name),'/admin/index.html'];
+  const assets=new Set();
+  for(const page of pages){
+    const html=fs.readFileSync(path.join(publicRoot,page),'utf8');
+    for(const match of html.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)=["']([^"']+)["']/gi)){
+      const url=new URL(match[1],base+page);
+      if(url.origin===base&&/\.(?:js|css)$/.test(url.pathname))assets.add(url.pathname);
+    }
+  }
+  for(const asset of assets)assert.equal((await request(asset)).status,200,asset);
 });
 test('rental properties retain photo order, floor plans and rental fields',async()=>{
   const body={title:'Rental test',listing_kind:'rent',status:'在租',price_label:'$850',price_value:850,rent_period:'week',available_from:'2027-02-01',bond:3400,images:['media/news-2.jpg','media/news-1.jpg'],floorplans:['media/prop-albany-1.jpg']};

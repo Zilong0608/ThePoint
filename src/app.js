@@ -578,6 +578,7 @@ function parseProp(row) {
 /* ---------------- 前台 API ---------------- */
 /* 房源列表(带筛选/排序/分页) */
 require('./routes/properties')({app,db,requireAuth,requireUser,geocode,parseProp});
+require('./routes/council')({app,db,requireAuth});
 
 /* 资讯 */
 app.get('/api/news', (req, res) => {
@@ -929,7 +930,7 @@ function validateVendor(data) {
   if (!String(data.name_zh || '').trim()) return '请填写名称';
   if (!db.prepare('SELECT id FROM sections WHERE id=? AND visible=1').get(data.section_id)) return '请选择有效板块';
   if (data.category_id && !db.prepare('SELECT id FROM categories WHERE id=? AND section_id=? AND visible=1').get(data.category_id,data.section_id)) return '分类不属于所选板块';
-  if (data.website && (!/^https?:\/\//i.test(data.website) || !require('../public/content').safeUrl(data.website))) return '官网需填写有效的 http 或 https 地址';
+  if (data.website && (!/^https?:\/\//i.test(data.website) || !require('../public/assets/js/content').safeUrl(data.website))) return '官网需填写有效的 http 或 https 地址';
   return null;
 }
 function vendorRevision(vendorId, pendingOnly = false) {
@@ -1712,7 +1713,7 @@ app.get('/sitemap.xml', (req, res) => {
   const urls = [];
   const add = (loc, priority) => urls.push(`<url><loc>${base}/${loc}</loc><priority>${priority}</priority></url>`);
   add('', '1.0');
-  ['properties.html', 'experts.html', 'news.html', 'partners.html', 'services.html', 'join.html'].forEach(p => add(p, '0.8'));
+  ['properties.html', 'council.html', 'experts.html', 'news.html', 'partners.html', 'services.html', 'join.html'].forEach(p => add(p, '0.8'));
   db.prepare('SELECT slug FROM sections WHERE visible=1').all().forEach(s =>
     add(s.slug === 'property' ? 'properties.html' : `section.html?s=${s.slug}`, '0.8'));
   db.prepare("SELECT id FROM properties WHERE status != '下架'").all().forEach(r => add(`property.html?id=${r.id}`, '0.7'));
@@ -1732,10 +1733,10 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   const publicFiles = new Set(['/', '/index.html', '/404.html', '/account.html', '/article.html', '/disclaimer.html',
     '/expert.html', '/experts.html', '/join.html', '/me.html', '/news.html', '/partners.html', '/post.html',
-    '/privacy.html', '/properties.html', '/property.html', '/reset.html', '/search.html', '/section.html',
-    '/services.html', '/vendor.html', '/app.js', '/content.js', '/i18n.js', '/script.js', '/styles.css', '/property-map.js', '/property-map.css',
+    '/council.html', '/assets/js/council.js', '/assets/js/council-content.js', '/assets/css/council.css', '/privacy.html', '/properties.html', '/property.html', '/reset.html', '/search.html', '/section.html',
+    '/services.html', '/vendor.html', '/assets/js/app.js', '/assets/js/content.js', '/assets/js/i18n.js', '/assets/js/script.js', '/assets/css/styles.css', '/assets/js/property-map.js', '/assets/css/property-map.css',
     '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css',
-    '/admin', '/admin/', '/admin/index.html', '/admin/content-tools.js', '/admin/content-tools.css', '/admin/property-tools.js', '/admin/operations-tools.js']);
+    '/admin', '/admin/', '/admin/index.html', '/admin/js/content-tools.js', '/admin/css/content-tools.css', '/admin/js/property-tools.js', '/admin/js/council-tools.js', '/admin/js/operations-tools.js']);
   if (publicFiles.has(req.path) || /^\/vendor\/leaflet\/images\/(?:layers(?:-2x)?|marker-icon(?:-2x)?|marker-shadow)\.png$/.test(req.path) || /^\/(?:media|uploads)\/[a-zA-Z0-9_-]+\.(?:svg|jpe?g|png|webp|gif|avif)$/i.test(req.path)) return next();
   res.status(404).end();
 });

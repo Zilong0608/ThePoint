@@ -21,21 +21,28 @@ npm start
 ## 目录
 
 ```text
-public/                  浏览器可访问的前端文件，网址保持不变
-  admin/                 管理后台
+public/                  前台 HTML 页面，页面网址保持不变
+  assets/js/             前台脚本及前后台共用的正文渲染器
+  assets/css/            前台样式
+  admin/                 管理后台页面
+    js/                  后台编辑器、房源、物业查询及运维脚本
+    css/                 后台编辑器样式
   media/                 站点图片和品牌资源
   vendor/leaflet/         固定版本的第三方地图库及许可证
 src/                     服务器代码，不对浏览器公开
   config/                配置与数据路径
   database/              建表、迁移、基础分类初始化
-  domain/                房源和发布时间规则
-  routes/                已独立的房源和后台内容路由
+  domain/                房源、发布时间及物业查询几何规则
+  routes/                房源、后台内容及物业查询路由
   security/              密码与后台角色权限
-  services/              地址定位和详情页初始渲染
+  services/              地址定位、Council 查询和详情页初始渲染
   app.js                 Express 组装、其余业务路由及启动
 scripts/                 备份、校验等维护命令
 tests/                   自动化回归测试；样本仅写入临时数据库
+  fixtures/              测试样本与模拟接口，正式启动不会加载
 docs/                    部署、上线清单和架构说明
+  archive/               历史方案与已停用演示代码，不参与运行
+  reference/             本地原始手册与截图，不提交、不部署
 storage/                 私有数据库、上传图片和备份，不提交代码仓库
 server.js                启动入口
 .env.example             配置模板，不含真实密钥
@@ -53,7 +60,7 @@ server.js                启动入口
 
 ```sh
 npm run dev           # 修改后自动重启
-npm run check         # JavaScript 语法检查
+npm run check         # JavaScript 语法、页面本地脚本及样式路径检查
 npm test              # 隔离数据库回归测试
 npm run test:browser  # Chrome / Edge 浏览器回归
 npm run backup        # 一致性数据库快照、上传图片及校验清单
@@ -72,6 +79,8 @@ npm run backup        # 一致性数据库快照、上传图片及校验清单
 - [部署与恢复](docs/DEPLOYMENT.md)
 - [Render 部署与休眠说明](docs/RENDER.md)
 - [代码结构与维护约定](docs/ARCHITECTURE.md)
+- [Council 物业查询：数据来源、覆盖与维护](docs/COUNCIL.md)
+- [物业查询已交付范围与待接入资料](docs/COUNCIL_STATUS.md)
 - [此次目录与数据清理记录](docs/CLEANUP_REPORT.md)
 
 目前主要业务功能已实现。本地回归通过不代表已经完成公网部署、真实邮件投递、异机备份或生产环境验收。

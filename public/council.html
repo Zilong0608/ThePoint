@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>物业资料查询 · THE POINT</title>
+<meta name="description" content="奥克兰物业资料查询：官方地址、地块、土地分区与规划变更。">
+<link rel="icon" href="media/logo.svg"><link rel="stylesheet" href="/assets/css/styles.css"><link rel="stylesheet" href="vendor/leaflet/leaflet.css"><link rel="stylesheet" href="/assets/css/council.css">
+</head>
+<body>
+<header class="site-header"><a class="brand" href="index.html"><img src="media/logo.svg" alt="THE POINT"></a><nav class="nav"><a href="index.html">Home</a><a href="properties.html">Estate</a><a href="council.html">物业查询 / Property research</a></nav><button class="burger" aria-label="菜单"><span></span><span></span><span></span></button></header>
+<div class="mobile-nav"><button class="close" aria-label="关闭">&times;</button></div>
+<main class="council-page wrap">
+  <p class="eyebrow">THE POINT · AUCKLAND</p><h1 id="research-title"></h1><p id="research-intro" class="lead-dim"></p>
+  <section class="research-search" aria-labelledby="research-title">
+    <form id="address-search" data-live><label for="research-address" id="address-label"></label><div class="research-search-row"><input id="research-address" name="q" type="search" minlength="5" maxlength="160" autocomplete="off" required><button class="btn btn--solid" id="address-submit" type="submit"></button></div></form>
+    <p id="research-config" role="status"></p><div id="address-results"></div>
+  </section>
+  <p id="research-instruction"></p><div id="research-layer-status" class="research-layer-status" role="status" aria-live="polite"></div>
+  <div class="research-layout"><section class="research-map-section"><div id="research-map" tabindex="0"></div><p id="research-map-status" role="status"></p><p id="map-legend"></p></section>
+  <section class="research-panel" aria-live="polite" aria-busy="false"><h2 id="selected-address"></h2><p id="research-status" role="status"></p><button class="btn btn--sm" id="research-retry" hidden></button><div class="research-tools" id="report-tools" hidden><button type="button" class="btn btn--sm" id="report-locate"></button><button type="button" class="btn btn--sm" id="report-print"></button><button type="button" class="btn btn--sm" id="report-share"></button><button type="button" class="btn btn--sm" id="report-download"></button></div><p id="report-feedback" role="status"></p><div id="research-results"></div></section></div>
+  <aside class="research-note"><h2 id="research-note-title"></h2><p id="research-note-text"></p><p id="research-privacy"></p><a href="https://unitaryplanmaps.aucklandcouncil.govt.nz/upviewer/" target="_blank" rel="noopener" id="official-viewer"></a></aside>
+  <section class="research-library" aria-labelledby="library-title"><h2 id="library-title"></h2><p id="library-note"></p><form id="library-form" data-live><label for="library-query" id="library-label"></label><div class="research-search-row"><input id="library-query" type="search" maxlength="160"><button type="submit" class="btn btn--sm" id="library-submit"></button></div></form><p id="library-status" role="status"></p><div id="library-results"></div></section>
+</main>
+<footer class="site-footer"><div class="wrap"><div class="footer-grid"><div class="footer-brand"><img src="media/logo-light.svg" alt="THE POINT"></div><div><h4>导览</h4></div></div><div class="footer-bottom"><span>© THE POINT</span><span><a href="privacy.html">Privacy</a></span></div></div></footer>
+<script src="/assets/js/i18n.js"></script><script src="/assets/js/script.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="/assets/js/council-content.js"></script><script src="/assets/js/council.js"></script>
+</body></html>

@@ -83,5 +83,6 @@
       target.querySelectorAll('form').forEach(f=>f.onsubmit=async e=>{e.preventDefault();const b={};new FormData(f).forEach((v,k)=>b[k]=v);try{await ctx.put('/api/admin/staff/'+f.dataset.staffId,b);f.elements.new_password.value='';f.querySelector('p').textContent='已保存，账号原登录已失效。';}catch(err){f.querySelector('p').textContent=err.message;}});
     }catch(e){target.textContent=e.message;}
   }
-  window.TPOperations={enquiries,revisionBlock,staff};
+  const council=(root,ctx)=>window.TPCouncilAdmin.render(root,ctx);
+  window.TPOperations={enquiries,revisionBlock,staff,council};
 })();

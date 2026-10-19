@@ -348,6 +348,7 @@
           <div class="pd-map pd-tour"><iframe src="${esc(p.tour_url)}" loading="lazy" allowfullscreen allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen"></iframe></div>` : ''}
           ${p.address ? `<div class="divider"></div>
           <p class="eyebrow" style="margin-bottom:14px">${pen ? 'Location' : 'Location · 位置'}</p>
+          <p style="margin-bottom:16px"><a class="btn btn--sm" href="council.html?address=${encodeURIComponent(p.address)}">${pen?'Research zoning and planning':'查询土地分区与规划资料'}</a></p>
           <div class="pd-map"><iframe src="https://www.google.com/maps?q=${encodeURIComponent([p.address, p.suburb, p.city, 'New Zealand'].filter(Boolean).join(', '))}&output=embed&hl=${pen?'en':'zh-CN'}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>` : ''}
         </div>
         <aside class="pd-side">

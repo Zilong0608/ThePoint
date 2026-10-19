@@ -1,5 +1,5 @@
 'use strict';
-const { safeUrl } = require('../../public/content');
+const { safeUrl } = require('../../public/assets/js/content');
 function invalid(message) { const error = new Error(message); error.status = 400; throw error; }
 function normalizeProperty(data, previous = {}) {
   const moved=['address','suburb','city'].some(key=>key in data && String(data[key]||'').trim()!==String(previous[key]||'').trim());

@@ -8,7 +8,9 @@
 
 `src/domain/` 保存输入校验和业务规则；`src/security/` 管理密码和角色；`src/services/` 提供地图定位、HTML 详情初始渲染。`src/routes/` 通过明确的参数接收数据库和认证等依赖，保持路由注册顺序。尚未拆出的账号、审核、留言等路由集中在 `src/app.js`，后续按业务域逐步拆分。
 
-前后台共用的安全正文渲染器放在 `public/content.js`，浏览器直接加载，服务器通过 CommonJS 引入。第三方 Leaflet 文件放在 `public/vendor/leaflet/`，保留许可证，升级时同时核对 package-lock 和打包文件。
+前台 HTML 页面放在 `public/`，脚本集中在 `public/assets/js/`，样式集中在 `public/assets/css/`。后台页面位于 `public/admin/index.html`，对应脚本和样式分别放在其 `js/`、`css/` 子目录。页面使用从网站根目录开始的资源路径，避免相对路径随目录变化失效。
+
+前后台共用的安全正文渲染器放在 `public/assets/js/content.js`，浏览器直接加载，服务器通过 CommonJS 引入。第三方 Leaflet 文件放在 `public/vendor/leaflet/`，保留许可证，升级时同时核对 package-lock 和打包文件。
 
 ## 数据与发布边界
 
@@ -26,3 +28,4 @@
 4. 路径或接口变动后运行语法检查与接口回归；影响界面、登录或表单时再运行浏览器回归。
 5. 测试使用系统临时目录；不要把测试账号、留言或上传文件写入业务数据库。清理数据前先生成并校验完整备份。
 6. 整理过程中不改 Git 历史、不自动提交，不把 `.env`、备份和私人用户资料加入仓库。
+7. 新增脚本、样式需放入对应资源目录，同时登记 `src/app.js` 的精确静态文件白名单。临时测试使用系统临时目录，项目内预览截图只放 `.preview/`；不要在根目录保留一次性脚本和调试输出。

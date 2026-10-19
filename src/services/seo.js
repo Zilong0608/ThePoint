@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
-const Content=require('../../public/content');
+const Content=require('../../public/assets/js/content');
 function detailHtml(kind,row,root,base){
   const config={news:['article.html','article-detail'],posts:['post.html','post-detail'],vendors:['vendor.html','vendor-detail'],properties:['property.html','property-detail']};
   const [file,id]=config[kind];let html=fs.readFileSync(path.join(root,file),'utf8');

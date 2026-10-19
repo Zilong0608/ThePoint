@@ -307,7 +307,11 @@ section{position:relative;z-index:1}
    FOOTER (light, grounding)
    ============================================================ */
 .site-footer{position:relative;z-index:1;border-top:1px solid var(--line);background:var(--paper-soft);padding:70px 0 34px}
-.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px}
+.footer-grid{display:grid;grid-template-columns:1.2fr 2fr 1fr 1.2fr;gap:32px}
+.footer-grid>div{min-width:0}
+.footer-explore-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;align-items:start}
+.footer-grid .footer-explore-links a{margin:0;overflow-wrap:anywhere}
+@media(min-width:1100px){.footer-explore-links{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .footer-grid h4{font-family:var(--serif);font-size:15px;color:var(--accent-deep);margin-bottom:18px;letter-spacing:.1em;font-weight:500}
 .footer-grid a,.footer-grid p{display:block;color:var(--ink-2);font-size:14.5px;margin-bottom:10px;transition:color .3s}
 .footer-grid a:hover{color:var(--accent-deep)}

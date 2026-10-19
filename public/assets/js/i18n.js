@@ -15,6 +15,7 @@
   /* ---------- UI 词典 ---------- */
   const DICT = {
     home: ['首页', 'Home'],
+    council: ['物业查询', 'Property research'],
     login: ['登录 / 注册', 'Sign in'],
     me: ['我的一点', 'My Point'],
     logout: ['退出登录', 'Sign out'],
@@ -162,6 +163,7 @@
         const on = (s.slug === 'property' && here === 'properties.html') || (s.slug === 'news' && here === 'news.html') || (here === 'section.html' && curSlug === s.slug);
         items.push(`<a ${on ? 'class="active"' : ''} href="${url}">${esc(sname(s))}</a>`);
       });
+      items.push(`<a ${here==='council.html'?'class="active"':''} href="council.html">${t('council')}</a>`);
       items.push(u
         ? `<a class="btn btn--ghost nav-cta" href="me.html">${t('me')}</a>`
         : `<a class="btn btn--ghost nav-cta" href="account.html">${t('login')}</a>`);
@@ -183,6 +185,7 @@
       const close = `<button class="close" aria-label="${t('close')}">&times;</button>`;
       const items = [`<a href="index.html">${t('home')}</a>`];
       secs.forEach(s => items.push(`<a href="${sectionUrl(s)}">${esc(sname(s))}</a>`));
+      items.push(`<a href="council.html">${t('council')}</a>`);
       items.push(`<a href="search.html">${t('search')}</a>`);
       items.push(u ? `<a href="me.html">${t('me')}${u.unread_notifications ? ` <i class="ndot" style="position:static;display:inline-flex">${u.unread_notifications}</i>` : ''}</a>` : `<a href="account.html">${t('login')}</a>`);
       items.push(`<a href="#" id="lang-toggle-m">${lang === 'zh' ? 'English' : '中文'}</a>`);
@@ -203,9 +206,10 @@
     /* 页脚:导览重建 + 低调「我要上一点」 */
     const fnav = document.querySelector('.footer-grid > div:nth-child(2)');
     if (fnav && fnav.querySelector('h4')) {
-      fnav.innerHTML = `<h4>${lang === 'en' ? 'Explore' : '导览'}</h4>` +
+      fnav.classList.add('footer-explore');
+      fnav.innerHTML = `<h4>${lang === 'en' ? 'Explore' : '导览'}</h4><div class="footer-explore-links">` +
         `<a href="index.html">${t('home')}</a>` +
-        secs.map(s => `<a href="${sectionUrl(s)}">${esc(sname(s))}</a>`).join('');
+        secs.map(s => `<a href="${sectionUrl(s)}">${esc(sname(s))}</a>`).join('')+`<a href="council.html">${t('council')}</a></div>`;
     }
     const fb = document.querySelector('.footer-bottom span:last-child');
     if (fb && !fb.querySelector('a[href="join.html"]')) {

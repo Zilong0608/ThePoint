@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理后台 · THE POINT 一点</title>
 <link rel="icon" href="../media/logo.svg">
-<link rel="stylesheet" href="content-tools.css">
+<link rel="stylesheet" href="/admin/css/content-tools.css">
 <link rel="stylesheet" href="../vendor/leaflet/leaflet.css">
-<link rel="stylesheet" href="../property-map.css">
+<link rel="stylesheet" href="/assets/css/property-map.css">
 <script src="../vendor/leaflet/leaflet.js"></script>
-<script src="../property-map.js"></script>
+<script src="/assets/js/property-map.js"></script>
 <style>
 :root{
   --paper:#F4F2EC;--paper-soft:#EBE7DD;--card:#FFFFFF;--line:#E2DDD1;
@@ -156,6 +156,7 @@ tr:hover td{background:var(--paper-soft)}
         <a data-tab="subscribers">订阅邮箱</a>
         <a data-tab="enquiries">客户留言 <span class="badge" id="unread-badge" style="display:none">0</span></a>
         <a data-tab="logs">操作日志</a>
+        <a data-tab="council">Council 规划文件</a>
         <a data-tab="settings">设置</a>
         <a data-tab="staff">后台员工</a>
       </nav>
@@ -173,10 +174,11 @@ tr:hover td{background:var(--paper-soft)}
 <!-- ===== 弹窗 ===== -->
 <div id="modal-bg"><div class="modal" id="modal"></div></div>
 
-<script src="../content.js"></script>
-<script src="content-tools.js"></script>
-<script src="property-tools.js"></script>
-<script src="operations-tools.js"></script>
+<script src="/assets/js/content.js"></script>
+<script src="/admin/js/content-tools.js"></script>
+<script src="/admin/js/property-tools.js"></script>
+<script src="/admin/js/council-tools.js"></script>
+<script src="/admin/js/operations-tools.js"></script>
 <script>
 (function () {
 'use strict';
@@ -535,6 +537,7 @@ function go(tab) {
   $$('#menu a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
   if (tab === 'dashboard') return renderDashboard();
   if(tab==='staff')return TPOperations.staff(main,{api,post,put,toast});
+  if(tab==='council')return TPOperations.council(main,{api,post,put,del,toast});
   if (tab === 'media') return TPEditor.mediaView(main, editorContext());
   if (tab === 'drafts') return TPEditor.draftsView(main, editorContext());
   if (tab === 'enquiries') return renderEnquiries();
