@@ -10,9 +10,13 @@ test('normal startup creates taxonomy and administrator without demo business co
     initializeSchema(db);initializeBaseline(db);
     for(const table of ['properties','agents','news','users','vendors','posts','services','partners'])assert.equal(db.prepare(`SELECT COUNT(*) n FROM ${table}`).get().n,0,table);
     assert.equal(db.prepare('SELECT COUNT(*) n FROM admins').get().n,1);
-    assert.equal(db.prepare('SELECT COUNT(*) n FROM sections').get().n,9);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM sections').get().n,10);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM sections WHERE slug='trades'").get().n,1);
     const categories=db.prepare('SELECT COUNT(*) n FROM categories').get().n;
     initializeSchema(db);initializeBaseline(db);
+    // 二次启动必须幂等:板块与分类都不能被重复插入
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM sections').get().n,10);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM sections WHERE slug='trades'").get().n,1);
     assert.equal(db.prepare('SELECT COUNT(*) n FROM categories').get().n,categories);
     assert.equal(db.prepare('SELECT COUNT(*) n FROM admins').get().n,1);
   }finally{db.close();}

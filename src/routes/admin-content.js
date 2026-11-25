@@ -9,7 +9,7 @@ const TABLES = {
     required: ['title']
   },
   agents: {
-    fields: ['name', 'category', 'email', 'phone', 'wechat', 'photo', 'bio', 'bio_en', 'sort_order', 'visible'],
+    fields: ['name', 'category', 'email', 'phone', 'wechat', 'photo', 'bio', 'bio_en', 'channel_url', 'sort_order', 'visible'],
     nums: ['sort_order', 'visible'],
     required: ['name']
   },
@@ -39,8 +39,8 @@ const TABLES = {
     required: ['section_id', 'name_zh']
   },
   videos: {
-    fields: ['title', 'title_en', 'video_id', 'category', 'cover', 'home_play', 'home_top', 'news_play', 'news_top', 'sort_order', 'visible', 'published_at'],
-    nums: ['home_play', 'home_top', 'news_play', 'news_top', 'sort_order', 'visible'],
+    fields: ['title', 'title_en', 'video_id', 'category', 'cover', 'home_play', 'home_top', 'news_play', 'news_top', 'sort_order', 'visible', 'published_at', 'agent_id', 'property_id'],
+    nums: ['home_play', 'home_top', 'news_play', 'news_top', 'sort_order', 'visible', 'agent_id', 'property_id'],
     required: ['title']
   },
   schools: {

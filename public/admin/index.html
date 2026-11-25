@@ -139,6 +139,7 @@ tr:hover td{background:var(--paper-soft)}
         <a data-tab="dashboard" class="on">概览</a>
         <a data-tab="properties">房源管理</a>
         <a data-tab="agents">专家管理</a>
+        <a data-tab="agentlinks">专家账号 <span class="badge" id="ag-badge" style="display:none">0</span></a>
         <a data-tab="news">资讯管理</a>
         <a data-tab="drafts">文章草稿</a>
         <a data-tab="media">媒体库</a>
@@ -154,6 +155,7 @@ tr:hover td{background:var(--paper-soft)}
         <a data-tab="categories">分类管理</a>
         <a data-tab="suburbs">地区管理</a>
         <a data-tab="subscribers">订阅邮箱</a>
+        <a data-tab="investors">投资者名录</a>
         <a data-tab="enquiries">客户留言 <span class="badge" id="unread-badge" style="display:none">0</span></a>
         <a data-tab="logs">操作日志</a>
         <a data-tab="council">Council 规划文件</a>
@@ -179,6 +181,7 @@ tr:hover td{background:var(--paper-soft)}
 <script src="/admin/js/property-tools.js"></script>
 <script src="/admin/js/council-tools.js"></script>
 <script src="/admin/js/operations-tools.js"></script>
+<script src="/admin/js/i18n-admin.js"></script>
 <script>
 (function () {
 'use strict';
@@ -187,7 +190,13 @@ const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function api(url, opts) {
-  const res = await fetch(url, opts);
+  let res;
+  try { res = await fetch(url, opts); }
+  catch (e) {
+    /* fetch 抛错 = 请求根本没到服务器。浏览器只会说 "Failed to fetch",
+       换成一句能照着做的话:九成是后端没启动或已退出。 */
+    throw new Error('连不上服务器 —— 请确认后端正在运行(在项目目录执行 npm start),然后刷新本页');
+  }
   if (res.status === 401) { showLogin(); throw new Error('登录已过期,请重新登录'); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `请求失败 (${res.status})`);
@@ -216,7 +225,7 @@ function showApp(username,role) {
   $$('#menu a').forEach(a=>{a.hidden=currentAdminRole!=='admin'&&!(tabs[currentAdminRole]||[]).includes(a.dataset.tab);a.style.display=a.hidden?'none':'';});
   $('#login-view').style.display = 'none'; $('#app-view').style.display = 'block';
   $('#who').textContent = username ? `当前:${username}` : '';
-  go('dashboard');
+  goSafe('dashboard');
 }
 $('#login-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -384,6 +393,8 @@ const SCHEMAS = {
       { k: 'title_en', l: 'Title (EN,可空)', full: 1 },
       { k: 'video_id', l: 'YouTube 链接或视频 ID(直接粘贴完整链接即可,自动提取)', full: 1 },
       { k: 'category', l: '分类(可手动输入新分类)', type: 'combo', opts: ['房源视频', '一点镜头', '文化', '活动'] },
+      { k: 'agent_id', l: '归属经纪人(可空;填了会显示在他的专家页)', type: 'number' },
+      { k: 'property_id', l: '关联房源 ID(可空)', type: 'number' },
       { k: 'published_at', l: '发布时间(如 2026-07-18 10:00,留空为现在)' },
       { k: 'home_top', l: '置顶(在文化页「一点镜头」排最前)', type: 'check' },
       { k: 'sort_order', l: '排序(小的在前)', type: 'number' },
@@ -434,7 +445,7 @@ const SCHEMAS = {
     columns: r => `
       <td><b>${esc(r.name_zh)}</b> <span style="color:var(--ink-3)">${esc(r.name_en)}</span></td>
       <td>${esc(r.slug)}</td>
-      <td>${esc(r.tagline_zh)}</td>
+      <td>${esc(window.TPAdminI18n && TPAdminI18n.lang === "en" ? (r.tagline_en || r.tagline_zh) : r.tagline_zh)}</td>
       <td><span class="tag ${r.visible ? 'green' : 'red'}">${r.visible ? '显示' : '隐藏'}</span></td>
       <td>${esc(r.sort_order)}</td>`,
     heads: ['板块', 'Slug', '标语', '状态', '排序'],
@@ -544,13 +555,30 @@ function go(tab) {
   if (tab === 'settings') return renderSettings();
   if (tab === 'users') return renderUsers();
   if (tab === 'subscribers') return renderSubscribers();
+  if (tab === 'investors') return renderInvestors();
+  if (tab === 'agentlinks') return renderAgentLinks();
   if (tab === 'vendors') return renderVendors();
   if (tab === 'posts') return renderPosts();
   if (tab === 'ads') return renderAds();
   if (tab === 'logs') return renderLogs();
   return renderTable(tab);
 }
-$$('#menu a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); go(a.dataset.tab); }));
+/* 渲染失败不能让页面停在「加载中…」—— 把原因显示出来,并给一个重试按钮 */
+function goSafe(tab) {
+  try {
+    const r = go(tab);
+    if (r && typeof r.catch === 'function') r.catch(showTabError);
+  } catch (e) { showTabError(e); }
+}
+function showTabError(e) {
+  main.innerHTML = `<div class="empty" style="text-align:left;max-width:560px">
+    <p style="color:var(--danger);font-weight:600;margin-bottom:8px">这个页面没能加载</p>
+    <p style="margin-bottom:14px">${esc(e && e.message ? e.message : String(e))}</p>
+    <button class="btn btn--sm btn--solid" id="tab-retry">重试</button></div>`;
+  const b = $('#tab-retry');
+  if (b) b.addEventListener('click', () => goSafe(activeTab));
+}
+$$('#menu a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); goSafe(a.dataset.tab); }));
 
 async function refreshBadge() {
   try {
@@ -574,6 +602,7 @@ async function renderDashboard() {
     ['待审入驻', s.vendors_pending, 'vendors'], ['平台内容', s.posts, 'posts'],
     ['待审内容', s.posts_pending, 'posts'],
     ['广告位', s.ads, 'ads'], ['待审广告', s.ads_pending, 'ads'],
+    ['投资者', s.investors, 'investors'],
     ['在库房源', s.properties, 'properties'], ['专家', s.agents, 'agents'],
     ['资讯文章', s.news, 'news'], ['视频', s.videos, 'videos'],
     ['学校', s.schools, 'schools'], ['订阅邮箱', s.subscribers, 'subscribers'],
@@ -582,7 +611,7 @@ async function renderDashboard() {
     ['客户留言', s.enquiries, 'enquiries'], ['未读留言', s.unread, 'enquiries']
   ].filter(([l,n,t])=>{const link=$(`#menu [data-tab="${t}"]`);return link&&!link.hidden;}).map(([l, n, t]) => `<div class="stat-card" style="cursor:pointer" onclick="__go('${t}')"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
 }
-window.__go = go;
+window.__go = goSafe;
 
 async function renderTable(name) {
   const cfg = SCHEMAS[name];
@@ -751,6 +780,161 @@ const VSTATUS = { pending: ['待审核', ''], approved: ['已入驻', 'green'], 
 const VROLE = { agent: '地产经纪', associate: '商家伙伴', trade: '工种服务' };
 /* 线索来源:广告投放的效果就靠这个看 */
 const SRC_LABEL = { ad: '站内广告', meta: 'Facebook / Meta', google: 'Google', campaign: '推广链接', referral: '外部来源', site: '站内' };
+
+/* ================= 专家账号绑定与资料审核 ================= */
+/* 经纪人要能自己改自己的资料,先得有个账号绑到他头上。改动走待审,通过才上线。 */
+const AGENT_FIELD = { name:'姓名', category:'类别', email:'邮箱', phone:'电话', wechat:'微信', photo:'照片', bio:'简介(中)', bio_en:'简介(英)' };
+async function renderAgentLinks() {
+  main.innerHTML = `
+    <div class="topbar">
+      <div><h2>专家账号与资料审核</h2><p class="sub">给经纪人绑定登录账号后,他本人就能在个人中心维护自己的资料;改动需在这里审核通过才会更新到网站。</p></div>
+      <button class="btn" id="agent-back">← 回专家管理</button>
+    </div>
+    <div id="agl"><div class="empty">加载中…</div></div>`;
+  $('#agent-back').addEventListener('click', () => goSafe('agents'));
+  const rows = await api('/api/admin/agents/links');
+  $('#agl').innerHTML = rows.map(r => `
+    <div class="msgcard${r.pending ? ' unread' : ''}">
+      <div class="mh">
+        <div>
+          <b style="font-size:16px">${esc(r.name)}</b>
+          ${r.user_id ? `<span class="tag green">已绑定 ${esc(r.user_email || '')}</span>` : '<span class="tag">未绑定账号</span>'}
+          ${r.pending ? '<span class="tag">有待审修改</span>' : ''}
+        </div>
+      </div>
+      ${r.pending ? `<div style="margin-top:10px;padding:12px;background:var(--soft);border:1px solid var(--line)">
+        <b style="font-size:13px">本人提交的修改(${esc((r.pending_at||'').slice(0,16))})</b>
+        ${Object.entries(r.pending).map(([k,v]) => `<div class="meta" style="margin-top:6px"><b>${AGENT_FIELD[k]||esc(k)}</b>:${k==='photo'?`<img src="${esc(toAdminPath(v))}" style="height:48px;vertical-align:middle;margin-left:6px">`:esc(String(v).slice(0,300))||'(清空)'}</div>`).join('')}
+        <div class="rowbtns" style="margin-top:12px">
+          <button class="btn btn--sm btn--solid" data-agok="${r.id}">通过并上线</button>
+          <button class="btn btn--sm btn--danger" data-agno="${r.id}">驳回</button>
+        </div>
+      </div>` : ''}
+      ${r.review_note ? `<p class="meta" style="margin-top:6px;color:var(--danger)">上次驳回原因:${esc(r.review_note)}</p>` : ''}
+      <div class="rowbtns" style="margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn--sm" data-aglink="${r.id}">${r.user_id ? '换绑账号' : '绑定账号'}</button>
+        ${r.user_id ? `<button class="btn btn--sm btn--danger" data-agunlink="${r.id}">解绑</button>` : ''}
+      </div>
+    </div>`).join('') || '<div class="empty">还没有专家记录。</div>';
+
+  $('#agl').addEventListener('click', async e => {
+    const ok=e.target.closest('[data-agok]'), no=e.target.closest('[data-agno]'),
+          lk=e.target.closest('[data-aglink]'), ul=e.target.closest('[data-agunlink]');
+    try {
+      if (ok) { await post(`/api/admin/agents/${ok.dataset.agok}/review`, { approve:true }); toast('已通过,网站已更新'); return renderAgentLinks(); }
+      if (no) { const note = prompt('驳回原因(会通知本人):',''); if (note!==null) { await post(`/api/admin/agents/${no.dataset.agno}/review`, { approve:false, review_note:note }); toast('已驳回'); return renderAgentLinks(); } }
+      if (lk) {
+        const email = prompt('输入该经纪人已注册的账号邮箱(他需要先在前台注册):','');
+        if (email) { await put(`/api/admin/agents/${lk.dataset.aglink}/link`, { email }); toast('绑定成功'); return renderAgentLinks(); }
+      }
+      if (ul && confirm('解除绑定?对方将无法再自助编辑资料。')) { await put(`/api/admin/agents/${ul.dataset.agunlink}/link`, { email:'' }); return renderAgentLinks(); }
+    } catch (err) { alert(err.message); }
+  });
+}
+
+/* ================= 投资者名录 ================= */
+const INV_KIND = { rental: '收租房', land: '土地', project: '开发项目' };
+const INV_BANDS = [['u500','50 万以下'],['500_750','50 – 75 万'],['750_1m','75 – 100 万'],
+                   ['1m_15','100 – 150 万'],['15_2m','150 – 200 万'],['2m_plus','200 万以上']];
+const wan = n => (n == null ? '不限' : Math.round(n / 10000) + ' 万');
+const invRange = x => (x.price_min == null && x.price_max == null) ? '不限'
+  : x.price_min == null ? wan(x.price_max) + '以下'
+  : x.price_max == null ? wan(x.price_min) + '以上'
+  : wan(x.price_min) + ' – ' + wan(x.price_max);
+
+let invFilter = { kind: '', band: '', status: '', q: '' };
+async function renderInvestors() {
+  main.innerHTML = `
+    <div class="topbar">
+      <div><h2>投资者名录</h2><p class="sub">投资者在前台登记的类型与预算。上新房源时可用「找匹配的投资者」一键筛出该价位的意向客户。</p></div>
+      <a class="btn btn--solid" id="inv-export" href="/api/admin/investors/export.csv">导出名单 CSV</a>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+      <select id="inv-f-kind"><option value="">全部类型</option>${Object.entries(INV_KIND).map(([k,v])=>`<option value="${k}"${invFilter.kind===k?' selected':''}>${v}</option>`).join('')}</select>
+      <select id="inv-f-band"><option value="">全部预算</option>${INV_BANDS.map(([k,v])=>`<option value="${k}"${invFilter.band===k?' selected':''}>${v}</option>`).join('')}</select>
+      <select id="inv-f-status"><option value="">全部状态</option><option value="active"${invFilter.status==='active'?' selected':''}>有效</option><option value="unsubscribed"${invFilter.status==='unsubscribed'?' selected':''}>已退订</option></select>
+      <input id="inv-f-q" placeholder="搜姓名 / 邮箱 / 电话" value="${esc(invFilter.q)}" style="min-width:180px">
+      <button class="btn btn--sm btn--solid" id="inv-search">筛选</button>
+      <button class="btn btn--sm" id="inv-reset">重置</button>
+    </div>
+    <div class="tablewrap" style="padding:18px;margin-bottom:22px">
+      <b style="font-size:15px">找匹配的投资者</b>
+      <p class="sub" style="margin:4px 0 12px">输入一套房源的价格,筛出预算涵盖这个价位的人 —— 这就是发匹配通知前要的名单。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="inv-m-kind">${Object.entries(INV_KIND).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+        <input id="inv-m-price" type="number" placeholder="价格,如 820000" style="min-width:180px">
+        <button class="btn btn--sm btn--solid" id="inv-match">查找</button>
+      </div>
+      <div id="inv-m-result" style="margin-top:12px"></div>
+    </div>
+    <div id="inv-list"><div class="empty">加载中…</div></div>`;
+
+  $('#inv-export').addEventListener('click', () => {
+    /* 导出跟随当前状态筛选,其它筛选条件不带(导出的是完整名单) */
+    $('#inv-export').href = '/api/admin/investors/export.csv' + (invFilter.status ? '?status=' + invFilter.status : '');
+  });
+  const apply = () => {
+    invFilter = { kind: $('#inv-f-kind').value, band: $('#inv-f-band').value, status: $('#inv-f-status').value, q: $('#inv-f-q').value.trim() };
+    renderInvestors();
+  };
+  $('#inv-search').addEventListener('click', apply);
+  $('#inv-f-q').addEventListener('keydown', e => { if (e.key === 'Enter') apply(); });
+  $('#inv-reset').addEventListener('click', () => { invFilter = { kind:'', band:'', status:'', q:'' }; renderInvestors(); });
+
+  $('#inv-match').addEventListener('click', async () => {
+    const box = $('#inv-m-result');
+    const price = Number($('#inv-m-price').value);
+    if (!Number.isFinite(price) || price <= 0) { box.innerHTML = '<span style="color:var(--danger)">请填写价格</span>'; return; }
+    box.textContent = '查找中…';
+    try {
+      const r = await api(`/api/admin/investors/match?kind=${$('#inv-m-kind').value}&price=${price}`);
+      box.innerHTML = r.count
+        ? `<p style="margin-bottom:8px">命中 <b>${r.count}</b> 位投资者,预算涵盖 $${price.toLocaleString()}:</p>
+           <div style="display:flex;flex-wrap:wrap;gap:8px">${r.investors.map(i =>
+             `<span class="tag">${esc(i.name || i.email)} · ${invRange(i)}</span>`).join('')}</div>
+           <p class="sub" style="margin-top:10px">邮箱:${r.investors.map(i => esc(i.email)).join('; ')}</p>`
+        : '<span style="color:var(--ink-3)">没有预算匹配这个价位的投资者。</span>';
+    } catch (e) { box.innerHTML = `<span style="color:var(--danger)">${esc(e.message)}</span>`; }
+  });
+
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(invFilter)) if (v) qs.set(k, v);
+  const rows = await api('/api/admin/investors' + (qs.toString() ? '?' + qs : ''));
+  $('#inv-list').innerHTML = rows.length ? rows.map(r => `
+    <div class="msgcard">
+      <div class="mh">
+        <div>
+          <span class="who">${esc(r.name || '(未留名)')}</span>
+          ${r.status === 'unsubscribed' ? '<span class="tag red">已退订</span>' : '<span class="tag green">有效</span>'}
+          ${r.lang === 'en' ? '<span class="tag">EN</span>' : ''}
+          <div class="meta">${[r.email, r.phone].filter(Boolean).map(esc).join(' · ')}</div>
+        </div>
+        <div class="meta">${esc((r.created_at || '').slice(0, 16))}</div>
+      </div>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px">
+        ${r.interests.map(x => `<span class="tag">${INV_KIND[x.kind] || esc(x.kind)} · ${invRange(x)}</span>`).join('') || '<span class="meta">(无意向)</span>'}
+      </div>
+      ${r.source ? `<div class="meta" style="margin-top:6px">来源:${esc(SRC_LABEL[r.source] || r.source)}</div>` : ''}
+      ${r.note ? `<p class="meta" style="margin-top:6px">备注:${esc(r.note)}</p>` : ''}
+      <div class="rowbtns" style="margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn--sm" data-invnote="${r.id}">备注</button>
+        <button class="btn btn--sm" data-invstatus="${r.id}" data-v="${r.status === 'active' ? 'unsubscribed' : 'active'}">${r.status === 'active' ? '标为退订' : '恢复有效'}</button>
+        <button class="btn btn--sm btn--danger" data-invdel="${r.id}">删除</button>
+      </div>
+    </div>`).join('') : '<div class="empty">还没有投资者登记。前台入口:/investors.html</div>';
+
+  $('#inv-list').addEventListener('click', async e => {
+    const nt = e.target.closest('[data-invnote]'), st = e.target.closest('[data-invstatus]'), dl = e.target.closest('[data-invdel]');
+    try {
+      if (nt) {
+        const note = prompt('内部备注(仅后台可见):', '');
+        if (note !== null) { await put(`/api/admin/investors/${nt.dataset.invnote}`, { note }); renderInvestors(); }
+      }
+      if (st) { await put(`/api/admin/investors/${st.dataset.invstatus}`, { status: st.dataset.v }); renderInvestors(); }
+      if (dl && confirm('删除这位投资者及其意向记录?不可恢复。')) { await del(`/api/admin/investors/${dl.dataset.invdel}`); renderInvestors(); }
+    } catch (err) { alert(err.message); }
+  });
+}
 
 /* ================= 广告位管理 ================= */
 const ASTATUS = { pending: ['待审核', ''], approved: ['投放中', 'green'], rejected: ['已驳回', 'red'], paused: ['已暂停', 'red'] };
@@ -943,7 +1127,7 @@ async function showUserDetail(id) {
       <button type="button" class="btn btn--solid" id="m-goposts">去内容审核管理其内容</button></div>`;
   $('#modal-bg').classList.add('open');
   $('#m-cancel').addEventListener('click', () => $('#modal-bg').classList.remove('open'));
-  $('#m-goposts').addEventListener('click', () => { $('#modal-bg').classList.remove('open'); go('posts'); });
+  $('#m-goposts').addEventListener('click', () => { $('#modal-bg').classList.remove('open'); goSafe('posts'); });
 }
 
 /* ================= 操作日志 ================= */
@@ -1250,7 +1434,7 @@ async function renderSettings() {
     </div>
     <div class="tablewrap" style="max-width:560px;padding:30px">
       <h3 style="font-family:var(--serif);font-size:18px;margin-bottom:6px">站点与邮件通知</h3>
-      <p class="sub" style="margin-bottom:18px">站点 URL 用于 sitemap 与分享链接。SMTP 填好后即可接入邮件通知(当前版本预留接口,站内通知始终生效)。</p>
+      <p class="sub" style="margin-bottom:18px">站点 URL 用于 sitemap 与分享链接。SMTP 填好并保存后,可点下方「发送测试」验证;开启邮件通知后,审核结果等站内通知会同时发一封邮件(站内通知始终生效)。</p>
       <form id="st-form">
         <div class="f"><label>站点 URL(如 https://thepoint.co.nz)</label><input name="site_url" style="margin-bottom:14px"></div>
         <div class="f"><label>SMTP 服务器</label><input name="smtp_host" placeholder="smtp.example.com" style="margin-bottom:14px"></div>
@@ -1276,7 +1460,32 @@ async function renderSettings() {
     </div>`;
   const systemPanel=document.createElement('div');systemPanel.className='tablewrap system-panel';systemPanel.innerHTML='<h3>运行与备份</h3><p data-system-status>读取状态…</p><button type="button" class="btn btn--sm" data-backup>立即完整备份</button><p class="sub" data-backup-message>完整备份包括数据库及 uploads 图片，默认每天自动执行一次。备份仍需另存到其他设备或存储服务。</p>';
   main.querySelector('.sub').after(systemPanel);
-  async function loadSystem(){try{const data=await api('/api/admin/system');systemPanel.querySelector('[data-system-status]').textContent=`邮件找回：${data.readiness.smtp&&data.readiness.site_url?'配置已填写，请发送测试邮件确认':'未就绪，请配置 SMTP 与站点 URL'} · 最近完整备份：${data.backup.last?data.backup.last.created_at:'尚未完成'}${data.backup.error?' · 备份异常：'+data.backup.error:''} · 最近服务异常：${data.recent_errors.length}`;}catch(e){systemPanel.querySelector('[data-system-status]').textContent=e.message;}}
+  async function loadSystem(){
+    const box=systemPanel.querySelector('[data-system-status]');
+    try{
+      const data=await api('/api/admin/system');
+      const mb=n=>n>=1024*1024*1024?(n/1024/1024/1024).toFixed(1)+' GB':Math.round(n/1024/1024)+' MB';
+      const parts=[
+        `邮件找回：${data.readiness.smtp&&data.readiness.site_url?'配置已填写，请发送测试邮件确认':'未就绪，请配置 SMTP 与站点 URL'}`,
+        `最近完整备份：${data.backup.last?data.backup.last.created_at:'尚未完成'}`
+      ];
+      if(data.backup.error)parts.push('备份异常：'+data.backup.error);
+      const s=data.space;
+      if(s){
+        /* 磁盘写满会让整站写不进任何数据,所以快满时要显眼 */
+        let line=`磁盘：备份占用 ${mb(s.backups)} · 单份备份约 ${mb(s.need)}`;
+        if(s.disk){
+          const used=s.disk.total-s.disk.free, pct=Math.round(used/s.disk.total*100);
+          line+=` · 剩余 ${mb(s.disk.free)} / 共 ${mb(s.disk.total)}（已用 ${pct}%）`;
+          if(s.disk.free<s.need*3)line+=' ⚠ 空间偏紧，建议清理上传文件或扩容';
+        }
+        parts.push(line);
+      }
+      parts.push(`最近服务异常：${data.recent_errors.length}`);
+      box.textContent=parts.join(' · ');
+      box.style.color=(data.backup.error||(data.space&&data.space.disk&&data.space.disk.free<data.space.need*3))?'var(--danger)':'';
+    }catch(e){box.textContent=e.message;box.style.color='var(--danger)';}
+  }
   systemPanel.querySelector('[data-backup]').onclick=async()=>{const button=systemPanel.querySelector('[data-backup]');button.disabled=true;try{const result=await post('/api/admin/backup',{});systemPanel.querySelector('[data-backup-message]').textContent='备份完成：'+result.directory;await loadSystem();}catch(e){systemPanel.querySelector('[data-backup-message]').textContent=e.message;}finally{button.disabled=false;}};
   loadSystem();
   $('#pw-form').addEventListener('submit', async e => {

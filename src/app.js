@@ -13,7 +13,7 @@ const path = require('path');
 const fs = require('fs');
 const { validateViewing } = require('./domain/property');
 const { normalizeSchedule } = require('./domain/publication');
-const {createBackup}=require('../scripts/backup');
+const {createBackup,pruneBackups,spaceReport}=require('../scripts/backup');
 const adminPolicy=require('./security/admin-policy');
 const {detailHtml}=require('./services/seo');
 const {createGeocoder}=require('./services/geocoding');
@@ -72,9 +72,27 @@ const app = express();
 if(process.env.TRUST_PROXY==='1')app.set('trust proxy',1);
 app.use(express.json({ limit: '2mb' }));
 const recentErrors=[];
-const backupState={enabled:process.env.TP_AUTO_BACKUP!=='0',last:null,error:''};
+const backupState={enabled:process.env.TP_AUTO_BACKUP!=='0',last:null,error:'',pruned:0,space:null};
+/* 备份之外还要给数据库和上传留的余量,单位 MB,可用 TP_BACKUP_MIN_FREE_MB 调整 */
+const BACKUP_MARGIN=(Number(process.env.TP_BACKUP_MIN_FREE_MB)||64)*1024*1024;
 function runBackup(){
-  try{backupState.last=createBackup({dataDir:DATA_DIR});backupState.error='';return backupState.last;}
+  try{
+    /* 先清旧备份腾地方,再看空间够不够 —— 盘写满会让 SQLite 整个写不进去,
+       与其撑死不如这次不备份、把原因报到后台 */
+    pruneBackups({dataDir:DATA_DIR});
+    const space=spaceReport(DATA_DIR);
+    backupState.space=space;
+    if(space.disk&&space.disk.free<space.need+BACKUP_MARGIN){
+      const mb=n=>Math.round(n/1024/1024)+' MB';
+      throw new Error(`磁盘空间不足,已跳过本次备份(需要约 ${mb(space.need+BACKUP_MARGIN)},剩余 ${mb(space.disk.free)})。请清理上传文件或扩容磁盘。`);
+    }
+    backupState.last=createBackup({dataDir:DATA_DIR});
+    /* 备份完再清一次:把同一天早先那几份收掉,只留刚生成的这份 */
+    backupState.pruned=pruneBackups({dataDir:DATA_DIR}).removed.length;
+    backupState.space=spaceReport(DATA_DIR);
+    backupState.error='';
+    return backupState.last;
+  }
   catch(e){backupState.error=e.message;throw e;}
 }
 app.get('/healthz',(req,res)=>{
@@ -579,6 +597,8 @@ function parseProp(row) {
 /* 房源列表(带筛选/排序/分页) */
 require('./routes/properties')({app,db,requireAuth,requireUser,geocode,parseProp});
 require('./routes/council')({app,db,requireAuth});
+require('./routes/investors')({app,db,requireAuth,alog});
+require('./routes/agent-self')({app,db,requireAuth,requireUser,alog,notify});
 
 /* 资讯 */
 app.get('/api/news', (req, res) => {
@@ -1168,8 +1188,9 @@ app.delete('/api/admin/subscribers/:id', requireAuth, (req, res) => {
 
 /* ---------- 数据导出 / 备份 ---------- */
 const EXPORT_TABLES = ['properties', 'agents', 'news', 'partners', 'services', 'enquiries', 'users', 'sections',
-  'categories', 'vendors', 'posts', 'videos', 'schools', 'subscribers', 'suburbs', 'admin_logs'];
-const HIDE_COLS = ['password_hash', 'salt']; // 导出时不含密码字段
+  'categories', 'vendors', 'posts', 'videos', 'schools', 'subscribers', 'suburbs', 'admin_logs', 'investors'];
+// 导出时不含密码字段;investors.token 等同于凭证(拿到即可改他人意向),同样不能出现在导出文件里
+const HIDE_COLS = ['password_hash', 'salt', 'token'];
 function toCSV(rows) {
   if (!rows.length) return '﻿';
   const cols = Object.keys(rows[0]).filter(c => !HIDE_COLS.includes(c));
@@ -1665,13 +1686,17 @@ app.get('/api/admin/stats', requireAuth, (req, res) => {
     subscribers: db.prepare("SELECT COUNT(*) c FROM subscribers WHERE status='active'").get().c,
     users: c('users'), vendors: c('vendors'), posts: c('posts'),
     ads: c('ads'),
+    investors: db.prepare("SELECT COUNT(*) c FROM investors WHERE status='active'").get().c,
     unread: db.prepare('SELECT COUNT(*) c FROM enquiries WHERE is_read=0').get().c,
     vendors_pending: db.prepare("SELECT COUNT(*) c FROM vendors v WHERE status='pending' OR EXISTS (SELECT 1 FROM vendor_revisions r WHERE r.vendor_id=v.id AND r.status='pending')").get().c,
     posts_pending: db.prepare("SELECT COUNT(*) c FROM posts p WHERE status='pending' OR EXISTS (SELECT 1 FROM post_revisions r WHERE r.post_id=p.id AND r.status='pending')").get().c,
     ads_pending: db.prepare("SELECT COUNT(*) c FROM ads WHERE status='pending'").get().c
   });
 });
-app.get('/api/admin/system',requireAuth,(req,res)=>res.json({database:'sqlite',storage:'local',backup:backupState,recent_errors:recentErrors,readiness:{smtp:!!getSetting('smtp_host'),site_url:!!(getSetting('site_url')||process.env.PUBLIC_SITE_URL),https:/^https:\/\//.test(getSetting('site_url')||process.env.PUBLIC_SITE_URL||'')}}));
+app.get('/api/admin/system',requireAuth,(req,res)=>res.json({database:'sqlite',storage:'local',backup:backupState,
+  /* 每次都现算,后台随时看得到当前磁盘占用,不用等下一次备份 */
+  space:(()=>{try{return spaceReport(DATA_DIR);}catch(e){return null;}})(),
+  recent_errors:recentErrors,readiness:{smtp:!!getSetting('smtp_host'),site_url:!!(getSetting('site_url')||process.env.PUBLIC_SITE_URL),https:/^https:\/\//.test(getSetting('site_url')||process.env.PUBLIC_SITE_URL||'')}}));
 app.post('/api/admin/backup',requireAuth,(req,res)=>{
   try{const result=runBackup();alog(req,'backup','system',null,'完整备份','数据库与上传文件已备份');res.json({ok:true,...result});}
   catch(e){res.status(500).json({error:'备份失败，请检查备份目录及磁盘空间'});}
@@ -1732,11 +1757,11 @@ app.get('/robots.txt', (req, res) => {
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   const publicFiles = new Set(['/', '/index.html', '/404.html', '/account.html', '/article.html', '/disclaimer.html',
-    '/expert.html', '/experts.html', '/join.html', '/me.html', '/news.html', '/partners.html', '/post.html',
+    '/expert.html', '/experts.html', '/investors.html', '/join.html', '/me.html', '/news.html', '/partners.html', '/post.html',
     '/council.html', '/assets/js/council.js', '/assets/js/council-content.js', '/assets/css/council.css', '/privacy.html', '/properties.html', '/property.html', '/reset.html', '/search.html', '/section.html',
     '/services.html', '/vendor.html', '/assets/js/app.js', '/assets/js/content.js', '/assets/js/i18n.js', '/assets/js/script.js', '/assets/css/styles.css', '/assets/js/property-map.js', '/assets/css/property-map.css',
     '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css',
-    '/admin', '/admin/', '/admin/index.html', '/admin/js/content-tools.js', '/admin/css/content-tools.css', '/admin/js/property-tools.js', '/admin/js/council-tools.js', '/admin/js/operations-tools.js']);
+    '/admin', '/admin/', '/admin/index.html', '/admin/js/content-tools.js', '/admin/css/content-tools.css', '/admin/js/property-tools.js', '/admin/js/council-tools.js', '/admin/js/operations-tools.js', '/admin/js/i18n-admin.js']);
   if (publicFiles.has(req.path) || /^\/vendor\/leaflet\/images\/(?:layers(?:-2x)?|marker-icon(?:-2x)?|marker-shadow)\.png$/.test(req.path) || /^\/(?:media|uploads)\/[a-zA-Z0-9_-]+\.(?:svg|jpe?g|png|webp|gif|avif)$/i.test(req.path)) return next();
   res.status(404).end();
 });

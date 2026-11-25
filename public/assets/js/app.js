@@ -15,7 +15,14 @@
   const uiError = (error, english) => TP.lang==='en' && hasChinese(error.message) ? english : error.message;
 
   async function api(url, opts) {
-    const res = await fetch(url, opts);
+    let res;
+    try { res = await fetch(url, opts); }
+    catch (e) {
+      /* 请求没到服务器。浏览器只会说 "Failed to fetch",换成访客看得懂的话 */
+      throw new Error(TP.lang === 'en'
+        ? 'Cannot reach the server. Please check your connection and try again.'
+        : '连不上服务器,请检查网络后重试。');
+    }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `请求失败 (${res.status})`);
     return data;
@@ -439,6 +446,13 @@
   }
 
   /* ---------- 专家详情 ---------- */
+  /* 只放行 http(s) 外链。channel_url 是经纪人自己填的,直接当 href 用会被塞 javascript: 伪协议 */
+  function safeHttp(value) {
+    const url = String(value || '').trim();
+    if (/[\s\\\u0000-\u001f]/.test(url) || !/^https?:\/\//i.test(url)) return '';
+    try { const u = new URL(url); return (u.username || u.password) ? '' : u.href; } catch (e) { return ''; }
+  }
+
   async function pageExpert() {
     const id = param('id');
     const box = $('#expert-detail');
@@ -459,8 +473,20 @@
             ${a.wechat ? `<div class="arow"><b style="font-size:13px">微信</b><span>${esc(a.wechat)}</span></div>` : ''}
           </div>
           ${TP.L(a, 'bio') ? `<p class="lead-dim" style="max-width:60ch;margin-top:14px">${esc(TP.L(a, 'bio'))}</p>` : ''}
+          ${safeHttp(a.channel_url) ? `<p style="margin-top:12px"><a class="btn btn--sm" href="${esc(safeHttp(a.channel_url))}" target="_blank" rel="noopener noreferrer">${TP.lang === 'en' ? 'YouTube channel' : 'YouTube 频道'} →</a></p>` : ''}
         </div>
       </div>
+      ${(a.videos && a.videos.length) ? `
+      <div class="ex-section">
+        <p class="eyebrow line">Videos</p>
+        <h2 class="section-title">${TP.lang === 'en' ? 'Videos' : 'TA 的视频'} <span style="color:var(--ink-3);font-size:60%">${a.videos.length}</span></h2>
+        <div class="divider"></div>
+        <div class="lgrid">${a.videos.filter(v => /^[\w-]{6,20}$/.test(String(v.video_id || ''))).map(v => `
+          <a class="vcard" href="https://www.youtube.com/watch?v=${esc(v.video_id)}" target="_blank" rel="noopener noreferrer" style="display:block;border:1px solid var(--line);background:var(--card);text-decoration:none">
+            <img src="${esc(v.cover || ('https://i.ytimg.com/vi/' + v.video_id + '/hqdefault.jpg'))}" alt="${esc(TP.L(v, 'title') || '')}" loading="lazy" style="display:block;width:100%;height:auto;object-fit:cover">
+            <span style="display:block;padding:12px 14px;font-size:14px;color:var(--ink-2);line-height:1.5">${esc(TP.L(v, 'title') || '')}</span>
+          </a>`).join('')}</div>
+      </div>` : ''}
       <div class="ex-section">
         <p class="eyebrow line">Listings</p>
         <h2 class="section-title">TA 的在售房源 <span style="color:var(--ink-3);font-size:60%">共 ${a.properties.length} 套</span></h2>
@@ -1345,6 +1371,9 @@
     const secs = await TP.sections();
     const vstatus = me.vendor ? me.vendor.status : null;
     const en = TP.lang === 'en';
+    /* 这个账号有没有被后台绑定到某位专家 —— 绑定了才出现「我的专家资料」 */
+    let agentLink = { linked: false };
+    try { agentLink = await api('/api/my/agent'); } catch (e) {}
 
     root.innerHTML = `
       <div class="me-head">
@@ -1364,6 +1393,7 @@
             <a class="btn btn--sm" href="vendor.html?id=${me.vendor.id}">${TP.t('viewHome')}</a>
             <button class="btn btn--sm" id="btn-ads">${en ? 'My ads' : '我的广告'}</button>
             <button class="btn btn--sm" id="btn-vendor-edit">${en ? 'Edit profile page' : '管理主页资料'}</button>` : ''}
+          ${agentLink.linked ? `<button class="btn btn--sm" id="btn-agent">${en ? 'My expert profile' : '我的专家资料'}${agentLink.pending ? ' <span class="stag stag--pending" style="margin-left:4px">审核中</span>' : ''}</button>` : ''}
           ${!vstatus || vstatus === 'rejected' ? `<a class="btn btn--sm" href="join.html">${TP.t('join')}</a>` : ''}
           <button class="btn btn--sm" id="btn-profile">${en ? 'Account' : '账号设置'}</button>
           <button class="btn btn--sm btn--danger" id="btn-logout">${TP.t('logout')}</button>
@@ -1499,6 +1529,69 @@
     const ba = $('#btn-ads');
     if (ba) ba.addEventListener('click', showMyAds);
 
+    /* 我的专家资料(后台绑定过账号的经纪人才有):本人改 → 进待审 → 后台通过才上线 */
+    async function showAgent() {
+      panel.innerHTML = `<div class="me-card">${skelText}</div>`;
+      const d = await api('/api/my/agent');
+      if (!d.linked) { panel.innerHTML = `<div class="me-card"><p>${en ? 'No expert profile is linked to this account.' : '您的账号尚未绑定专家资料。'}</p></div>`; return; }
+      const a = d.agent, p = d.pending || {};
+      const val = k => esc(k in p ? p[k] : (a[k] || ''));   /* 有待审就显示待审的值 */
+      panel.innerHTML = `<div class="me-card">
+        <h3>${en ? 'My expert profile' : '我的专家资料'}</h3>
+        ${d.pending ? `<p class="stag stag--pending" style="display:inline-block;margin-bottom:12px">${en ? 'Changes under review' : '以下修改正在审核中,通过后才会显示在网站上'}</p>` : ''}
+        ${d.review_note ? `<p style="color:var(--danger);font-size:13px;margin-bottom:12px">${en ? 'Last update was declined' : '上次修改未通过'}:${esc(d.review_note)}</p>` : ''}
+        <p style="color:var(--ink-3);font-size:13px;margin-bottom:16px">${en
+          ? 'Edits go to The Point for review before they appear on the site.'
+          : '修改提交后需经一点审核,通过后才会更新到网站上。'}</p>
+        <form id="agent-form" class="me-form">
+          <div class="frow">
+            <label>${en ? 'Name' : '姓名'}<input name="name" value="${val('name')}" maxlength="60" required></label>
+            <label>${en ? 'Category' : '类别'}<input name="category" value="${val('category')}" maxlength="30" placeholder="${en ? 'e.g. Property' : '如 地产 / 金融 / 租务'}"></label>
+          </div>
+          <div class="frow">
+            <label>${en ? 'Email' : '邮箱'}<input name="email" type="email" value="${val('email')}" maxlength="200"></label>
+            <label>${en ? 'Phone' : '电话'}<input name="phone" value="${val('phone')}" maxlength="50"></label>
+            <label>微信<input name="wechat" value="${val('wechat')}" maxlength="60"></label>
+          </div>
+          <label>${en ? 'Profile photo' : '个人照片'}
+            <input type="file" name="photo_file" accept="image/*">
+            <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:4px">${a.photo || p.photo ? (en ? 'Leave empty to keep the current photo' : '不选则保留现有照片') : ''}</span></label>
+          <label>${en ? 'YouTube channel' : 'YouTube 频道链接'}<input name="channel_url" value="${val('channel_url')}" maxlength="300" placeholder="https://youtube.com/@…"></label>
+          <label>${en ? 'Bio (ZH)' : '个人简介(中文)'}<textarea name="bio" rows="4" maxlength="3000">${val('bio')}</textarea></label>
+          <label>${en ? 'Bio (EN)' : '个人简介(英文)'}<textarea name="bio_en" rows="3" maxlength="3000">${val('bio_en')}</textarea></label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn--solid btn--sm" type="submit">${en ? 'Submit for review' : '提交审核'}</button>
+            ${d.pending ? `<button class="btn btn--sm" type="button" id="agent-withdraw">${en ? 'Withdraw pending changes' : '撤回待审修改'}</button>` : ''}
+          </div>
+        </form></div>`;
+
+      const wd = $('#agent-withdraw');
+      if (wd) wd.addEventListener('click', async () => {
+        if (!confirm(en ? 'Withdraw the pending changes?' : '撤回这次待审的修改?')) return;
+        try { await api('/api/my/agent/pending', { method: 'DELETE' }); showAgent(); } catch (ex) { alert(ex.message); }
+      });
+
+      $('#agent-form').addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const f = ev.target, btn = $('button[type=submit]', f), label = btn.textContent;
+        btn.disabled = true; btn.textContent = en ? 'Submitting…' : '提交中…';
+        try {
+          const body = {};
+          for (const k of ['name', 'category', 'email', 'phone', 'wechat', 'bio', 'bio_en', 'channel_url']) body[k] = f[k].value.trim();
+          const files = await uploadFiles($('[name=photo_file]', f));
+          if (files.length) body.photo = files[0];
+          const r = await api('/api/my/agent', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          alert(r.unchanged ? (en ? 'Nothing changed.' : '没有任何改动。') : (en ? 'Submitted — awaiting review.' : '已提交,等待审核。'));
+          showAgent();
+        } catch (ex) {
+          alert(ex.message);
+          btn.disabled = false; btn.textContent = label;
+        }
+      });
+    }
+    const ba2 = $('#btn-agent');
+    if (ba2) ba2.addEventListener('click', showAgent);
+
     /* 深链:me.html#notifications / #enquiries */
     if (location.hash === '#notifications') showNotifications();
     else if (location.hash === '#enquiries' && be) be.click();
@@ -1619,8 +1712,175 @@
     loadMyPosts();
   }
 
+  /* ---------- 投资意向登记 ----------
+     无 token = 新登记;带 token = 本人回来改自己的意向(邮件里「更新我的意向」按钮的落点)。 */
+  async function pageInvestors() {
+    const root = $('#inv-root');
+    const en = TP.lang === 'en';
+    const token = param('token') || '';
+    let opts, mine = null;
+
+    try { opts = await api('/api/investors/options'); }
+    catch (e) { root.innerHTML = `<div class="auth-card"><p>${en ? 'Could not load the form. Please try again later.' : '表单加载失败,请稍后重试。'}</p></div>`; return; }
+
+    if (token) {
+      try { mine = await api('/api/investors/me?token=' + encodeURIComponent(token)); }
+      catch (e) {
+        root.innerHTML = `<div class="auth-card" style="text-align:center">
+          <h3 style="font-family:var(--serif);font-size:20px;margin-bottom:10px">${en ? 'Link no longer valid' : '链接已失效'}</h3>
+          <p style="color:var(--ink-3);line-height:1.7">${en ? 'Please register again below.' : '请重新登记一次。'}</p>
+          <a class="btn btn--solid" href="investors.html" style="margin-top:18px">${en ? 'Register' : '重新登记'}</a></div>`;
+        return;
+      }
+      $('#inv-title').textContent = en ? 'Update my criteria' : '更新我的投资意向';
+      $('#inv-lead').textContent = en
+        ? 'Adjust the types and budgets below. Changes take effect straight away.'
+        : '修改下面的类型与预算,保存后立即生效。';
+    }
+
+    const picked = {};
+    (mine ? mine.interests : []).forEach(it => { picked[it.kind] = it; });
+    /* 把已存的数值区间对回档位 id;对不上(比如以后改了档位)就留空让本人重选 */
+    const bandOf = it => {
+      if (!it) return '';
+      const b = opts.bands.find(x => x.min === it.price_min && x.max === it.price_max);
+      return b ? b.id : '';
+    };
+    const L = o => en ? (o.label_en || o.label_zh) : o.label_zh;
+
+    root.innerHTML = `
+      <form id="inv-form" class="auth-card" style="max-width:none">
+        <p class="err" id="inv-err"></p>
+
+        <p class="eyebrow" style="margin-bottom:12px">${en ? '1 · What are you looking for?' : '1 · 您想投资什么?'}</p>
+        <p style="color:var(--ink-3);font-size:13px;margin-bottom:16px">${en
+          ? 'Tick every type you are interested in, then set a budget for each one.'
+          : '想投哪几类就勾哪几类,每一类分别设置预算区间。'}</p>
+        <div id="inv-kinds">
+          ${opts.kinds.map(k => {
+            const on = !!picked[k.id];
+            return `<div class="inv-kind" data-kind="${k.id}" style="border:1px solid var(--line);padding:16px;margin-bottom:12px">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0">
+                <input type="checkbox" name="kind" value="${k.id}"${on ? ' checked' : ''}>
+                <b style="font-size:15px">${esc(L(k))}</b>
+              </label>
+              <div class="inv-band" style="margin-top:12px${on ? '' : ';display:none'}">
+                <label class="fld" style="margin:0"><span>${en ? 'Budget' : '预算区间'}</span>
+                  <select name="band_${k.id}">
+                    <option value="">${en ? 'Please choose' : '请选择'}</option>
+                    ${opts.bands.map(b => `<option value="${b.id}"${bandOf(picked[k.id]) === b.id ? ' selected' : ''}>${esc(L(b))}</option>`).join('')}
+                  </select></label>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <p class="eyebrow" style="margin:26px 0 12px">${en ? '2 · How can we reach you?' : '2 · 怎么联系您?'}</p>
+        <div class="frow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+          <label class="fld"><span>${en ? 'Name' : '称呼'}</span>
+            <input name="name" maxlength="60" value="${esc(mine ? mine.name : '')}" placeholder="${en ? 'Your name' : '如何称呼您'}"></label>
+          <label class="fld"><span>${en ? 'Email *' : '邮箱 *'}</span>
+            <input name="email" type="email" required maxlength="120" value="${esc(mine ? mine.email : '')}"${mine ? ' readonly style="background:var(--soft)"' : ''} placeholder="you@example.com"></label>
+          <label class="fld"><span>${en ? 'Phone' : '电话'}</span>
+            <input name="phone" maxlength="40" value="${esc(mine ? mine.phone : '')}" placeholder="021 000 0000"></label>
+        </div>
+
+        <!-- 蜜罐:真人看不见,机器人会填 -->
+        <div style="position:absolute;left:-9999px" aria-hidden="true">
+          <label>Website<input name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+
+        ${mine ? '' : `
+        <label style="display:flex;gap:10px;align-items:flex-start;margin:22px 0 6px;font-size:13px;color:var(--ink-2);line-height:1.6;cursor:pointer">
+          <input type="checkbox" name="consent" required style="margin-top:3px">
+          <span>${en
+            ? 'I agree that The Point may keep these details and contact me about properties matching my criteria. I can update or unsubscribe at any time.'
+            : '我同意一点保存以上信息,并在有符合我条件的房源时与我联系。我可以随时更新意向或退订。'}</span>
+        </label>`}
+
+        <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center;margin-top:18px">
+          ${mine ? (en ? 'Save changes' : '保存修改') : (en ? 'Register my criteria' : '提交登记')}
+        </button>
+      </form>
+      ${mine ? `<p style="text-align:center;margin-top:16px">
+        <a href="#" id="inv-unsub" style="font-size:13px;color:var(--ink-3)">${en ? 'Unsubscribe from these alerts' : '不再接收匹配通知'}</a></p>` : ''}`;
+
+    /* 勾选类型 → 展开该类的预算下拉 */
+    $('#inv-kinds').addEventListener('change', e => {
+      const cb = e.target.closest('input[name=kind]');
+      if (!cb) return;
+      const box = cb.closest('.inv-kind').querySelector('.inv-band');
+      box.style.display = cb.checked ? '' : 'none';
+      if (!cb.checked) box.querySelector('select').value = '';
+    });
+
+    const err = $('#inv-err');
+    $('#inv-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      err.textContent = '';
+      const f = e.target;
+      const interests = [];
+      $$('input[name=kind]:checked', f).forEach(cb => {
+        const band = $(`[name="band_${cb.value}"]`, f).value;
+        if (band) interests.push({ kind: cb.value, band });
+      });
+      if (!interests.length) {
+        err.textContent = en ? 'Please tick at least one type and choose its budget.' : '请至少勾选一个类型,并选好它的预算区间。';
+        return;
+      }
+      const btn = $('button[type=submit]', f), label = btn.textContent;
+      btn.disabled = true; btn.textContent = en ? 'Submitting…' : '提交中…';
+      const body = {
+        name: f.name.value.trim(), phone: f.phone.value.trim(),
+        lang: TP.lang, interests, website: f.website.value
+      };
+      try {
+        if (mine) {
+          await api('/api/investors/me?token=' + encodeURIComponent(token),
+            { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          done(en ? 'Your criteria are updated.' : '您的投资意向已更新。', '');
+        } else {
+          body.email = f.email.value.trim();
+          body.consent = f.consent.checked ? 1 : 0;
+          const at = attribution();
+          if (at) { body.source = at.source; if (at.utm) body.utm = JSON.stringify(at.utm); body.landing = at.landing; }
+          const r = await post('/api/investors', body);
+          done(
+            r.updated
+              ? (en ? 'We already had your email — your criteria have been updated.' : '这个邮箱之前登记过,已为您更新意向。')
+              : (en ? 'Registered. We will be in touch when something matches.' : '登记成功。有匹配的房源时我们会联系您。'),
+            r.profile_url || '');
+        }
+      } catch (ex) {
+        err.textContent = ex.message;
+        btn.disabled = false; btn.textContent = label;
+      }
+    });
+
+    function done(msg, editUrl) {
+      root.innerHTML = `<div class="auth-card" style="text-align:center">
+        <h3 style="font-family:var(--serif);font-size:20px;margin-bottom:12px">${en ? 'All set' : '已完成'}</h3>
+        <p style="color:var(--ink-3);line-height:1.75">${esc(msg)}</p>
+        ${editUrl ? `<p style="color:var(--ink-3);font-size:13px;line-height:1.7;margin-top:18px">${en
+          ? 'Bookmark this link to change your criteria later:' : '想以后修改意向,可收藏这个链接:'}<br>
+          <a href="${esc(editUrl)}" style="word-break:break-all">${esc(location.origin + editUrl)}</a></p>` : ''}
+        <a class="btn" href="index.html" style="margin-top:22px">${en ? 'Back to home' : '返回首页'}</a></div>`;
+    }
+
+    const un = $('#inv-unsub');
+    if (un) un.addEventListener('click', async ev => {
+      ev.preventDefault();
+      if (!confirm(en ? 'Stop receiving matching alerts?' : '确定不再接收匹配通知?')) return;
+      try {
+        await post('/api/investors/unsubscribe', { token });
+        done(en ? 'You will no longer receive alerts. Register again any time.' : '已退订,不会再收到通知。随时可以重新登记。', '');
+      } catch (ex) { alert(ex.message); }
+    });
+  }
+
   /* ---------- 路由 ---------- */
   const routes = {
+    investors: pageInvestors,
     properties: pageProperties,
     property: pageProperty,
     experts: pageExperts,

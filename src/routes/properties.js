@@ -85,10 +85,12 @@ app.get('/api/agents', (req, res) => {
   res.json(db.prepare('SELECT id,name,category,email,phone,wechat,photo,bio FROM agents WHERE visible=1 ORDER BY sort_order,id').all());
 });
 app.get('/api/agents/:id', (req, res) => {
-  const a = db.prepare('SELECT id,name,category,email,phone,wechat,photo,bio FROM agents WHERE id=? AND visible=1').get(Number(req.params.id));
+  const a = db.prepare('SELECT id,name,category,email,phone,wechat,photo,bio,channel_url FROM agents WHERE id=? AND visible=1').get(Number(req.params.id));
   if (!a) return res.status(404).json({ error: '专家不存在' });
   const props = db.prepare("SELECT * FROM properties WHERE agent_id=? AND status != '下架' ORDER BY id DESC").all(a.id);
-  res.json({ ...a, properties: props.map(parseProp) });
+  /* 这位经纪人名下的视频 */
+  const videos = db.prepare('SELECT id,title,title_en,video_id,cover,published_at FROM videos WHERE agent_id=? AND visible=1 ORDER BY sort_order,id DESC').all(a.id);
+  res.json({ ...a, properties: props.map(parseProp), videos });
 });
 
 };

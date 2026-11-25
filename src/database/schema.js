@@ -351,7 +351,12 @@ CREATE INDEX IF NOT EXISTS idx_content_versions ON content_versions(kind,ref_id,
   addCol('enquiries', 'source', "TEXT DEFAULT ''");
   addCol('enquiries', 'utm', "TEXT DEFAULT ''");            /* JSON: utm_source/medium/campaign… */
   addCol('enquiries', 'landing', "TEXT DEFAULT ''");        /* 首次落地页 */
-  addCol('ads', 'leads', 'INTEGER DEFAULT 0');               /* 该广告带来的线索数 */
+  addCol('ads', 'leads', 'INTEGER DEFAULT 0');
+  /* 视频归属:姑姑要「每个 agent 的 video 和 YouTube 都连上」 */
+  addCol('videos', 'agent_id', 'INTEGER');
+  addCol('videos', 'property_id', 'INTEGER');
+  addCol('videos', 'channel_url', "TEXT DEFAULT ''");   /* 经纪人的 YouTube 频道主页 */
+  addCol('agents', 'channel_url', "TEXT DEFAULT ''");               /* 该广告带来的线索数 */
   for (const table of ['news', 'posts']) {
     addCol(table, 'content_format', "TEXT DEFAULT 'plain'");
     addCol(table,'scheduled_at',"TEXT DEFAULT ''");

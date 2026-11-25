@@ -104,8 +104,19 @@ db.prepare(`INSERT OR IGNORE INTO suburbs (name, sort_order)
       (SELECT COALESCE(MAX(sort_order),0)+1 FROM sections))`).run();
     console.log('板块新增:「资讯」升为第九域');
   }
+  /* 「工种服务」第十板块(姑姑要的洗窗 / water blasting / builder,老库一次性补入) */
+  if (!db.prepare("SELECT id FROM sections WHERE slug='trades'").get()) {
+    const info = db.prepare(`INSERT INTO sections (slug,name_zh,name_en,tagline_zh,tagline_en,sort_order)
+      VALUES ('trades','工种服务','Trades','洗窗、清洗、建筑装修,找靠谱师傅','Window cleaning, water blasting, builders',
+      (SELECT COALESCE(MAX(sort_order),0)+1 FROM sections))`).run();
+    const insCat = db.prepare('INSERT INTO categories (section_id,name_zh,name_en,sort_order) VALUES (?,?,?,?)');
+    [['洗窗', 'Window Cleaning'], ['高压清洗', 'Water Blasting'], ['建筑施工', 'Builders'],
+     ['水电', 'Plumbing & Electrical'], ['屋顶', 'Roofing'], ['油漆', 'Painting'], ['园艺绿化', 'Landscaping']]
+      .forEach((c, i) => insCat.run(info.lastInsertRowid, c[0], c[1], i + 1));
+    console.log('板块新增:「工种服务」及 7 个分类');
+  }
   /* 板块排序:资讯与集市/同城同组(幂等) */
-  const ORDER = { property: 1, advisory: 2, education: 3, living: 4, market: 5, local: 6, news: 7, career: 8, culture: 9 };
+  const ORDER = { property: 1, advisory: 2, education: 3, living: 4, market: 5, local: 6, news: 7, career: 8, culture: 9, trades: 10 };
   Object.entries(ORDER).forEach(([slug, n]) =>
     db.prepare('UPDATE sections SET sort_order=? WHERE slug=?').run(n, slug));
 }
