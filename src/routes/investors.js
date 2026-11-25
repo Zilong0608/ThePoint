@@ -13,7 +13,10 @@ CREATE TABLE IF NOT EXISTS investors (
   phone TEXT DEFAULT '',
   token TEXT UNIQUE NOT NULL,            -- 自助编辑链接用(邮件「更新我的意向」按钮)
   status TEXT DEFAULT 'active',          -- active / unsubscribed
-  consent INTEGER DEFAULT 0,             -- Privacy Act 用途告知同意
+  consent INTEGER DEFAULT 0,             -- 勾了「同意信息用途」这个框
+  email_verified INTEGER DEFAULT 0,      -- 地址归属是否验证过。公开表单任何人都能填别人的
+                                         -- 邮箱,所以勾了同意 ≠ 地址本人同意。SMTP 接通、
+                                         -- 走过邮件确认后才置 1;群发只应发给已验证的地址
   lang TEXT DEFAULT 'zh',                -- 将来群发按语言分流
   note TEXT DEFAULT '',                  -- 后台备注
   source TEXT DEFAULT '',                -- 复用站内归因:这人从哪个广告来的
@@ -34,6 +37,25 @@ CREATE INDEX IF NOT EXISTS idx_investors_email ON investors(email);
 CREATE INDEX IF NOT EXISTS idx_investors_status ON investors(status);
 CREATE INDEX IF NOT EXISTS idx_inv_interest ON investor_interests(kind, price_min, price_max);
 CREATE INDEX IF NOT EXISTS idx_inv_interest_owner ON investor_interests(investor_id);`);
+
+  /* 老库补字段:CREATE TABLE IF NOT EXISTS 对已存在的表不生效 */
+  for (const [col, def] of [['email_verified', 'INTEGER DEFAULT 0']]) {
+    const cols = db.prepare('PRAGMA table_info(investors)').all().map(c => c.name);
+    if (!cols.includes(col)) db.exec(`ALTER TABLE investors ADD COLUMN ${col} ${def}`);
+  }
+  /* 邮箱唯一约束。注意:CREATE UNIQUE INDEX IF NOT EXISTS 遇到同名的旧非唯一索引会
+     直接跳过(静默不生效),所以必须先按唯一性检查、不满足就重建。
+     库里已有重复邮箱时建不起来,此时只记日志,不能让服务起不来。 */
+  const emailIdx = db.prepare("SELECT \"unique\" u FROM pragma_index_list('investors') WHERE name='idx_investors_email'").get();
+  if (!emailIdx || !emailIdx.u) {
+    try {
+      db.exec('DROP INDEX IF EXISTS idx_investors_email');
+      db.exec('CREATE UNIQUE INDEX idx_investors_email ON investors(email)');
+    } catch (e) {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_investors_email ON investors(email)');
+      console.error('investors.email 存在重复,唯一约束未建立,请先清理重复邮箱:', e.message);
+    }
+  }
 
   const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || ''));
   const newToken = () => crypto.randomBytes(24).toString('hex');
@@ -81,8 +103,12 @@ CREATE INDEX IF NOT EXISTS idx_inv_interest_owner ON investor_interests(investor
          任何人都能拿别人的邮箱来 POST。所以:
            · 绝不回传已有记录的 token(它是读写该记录的唯一凭证)
            · 绝不改动已有记录(否则等于让陌生人覆盖别人的意向、并解除其退订)
-         返回与新建完全同形的结果,连「是否已存在」都不透露,避免变成邮箱探测器。
-         本人要改意向,走当初那条专属链接;链接丢了只能由后台协助或日后邮件找回。 */
+         本人要改意向,走当初那条专属链接;链接丢了需后台协助。
+
+         ⚠ 已知未解决:新建会返回 profile_url、这里不会,响应形状不同,
+         因此「某邮箱是否登记过」仍可被未登录者探测出来。要彻底消除,
+         必须改成「链接只发往该邮箱」—— 等 SMTP 接通后一并处理。
+         在那之前这是有意接受的残留风险,别再把它描述成已修复。 */
       return res.json({ ok: true });
     }
     const token = newToken();
@@ -177,10 +203,10 @@ CREATE INDEX IF NOT EXISTS idx_inv_interest_owner ON investor_interests(investor
       if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
       return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
     };
-    const head = ['id', '姓名', '邮箱', '电话', '状态', '语言', '意向', '来源', '备注', '登记时间', '更新时间'];
+    const head = ['id', '姓名', '邮箱', '邮箱已验证', '电话', '状态', '语言', '意向', '来源', '备注', '登记时间', '更新时间'];
     const body = rows.map(r => {
       const want = interestsOf(r.id).map(x => kindLabel(x.kind) + ' ' + rangeLabel(x.price_min, x.price_max)).join(' / ');
-      return [r.id, r.name, r.email, r.phone, r.status === 'active' ? '有效' : '已退订',
+      return [r.id, r.name, r.email, r.email_verified ? '是' : '否(未经邮件确认)', r.phone, r.status === 'active' ? '有效' : '已退订',
         r.lang === 'en' ? 'EN' : '中文', want, r.source, r.note, r.created_at, r.updated_at].map(cell).join(',');
     });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
