@@ -75,22 +75,22 @@ CREATE INDEX IF NOT EXISTS idx_inv_interest_owner ON investor_interests(investor
     const interests = normalizeInterests(b.interests);
     if (!interests.length) return res.status(400).json({ error: '请至少选择一个投资类型并选好预算区间' });
     const name = S(b.name, 100), phone = S(b.phone, 50), lang = b.lang === 'en' ? 'en' : 'zh';
-    const existing = db.prepare('SELECT id,token FROM investors WHERE email=?').get(email);
-    let id, token;
+    const existing = db.prepare('SELECT id FROM investors WHERE email=?').get(email);
     if (existing) {
-      /* 同一邮箱再次提交 = 更新意向,不产生重复记录 */
-      id = existing.id; token = existing.token;
-      db.prepare("UPDATE investors SET name=?,phone=?,lang=?,consent=1,status='active',updated_at=datetime('now','localtime') WHERE id=?")
-        .run(name, phone, lang, id);
-    } else {
-      token = newToken();
-      const info = db.prepare('INSERT INTO investors (name,email,phone,token,consent,lang,source,utm,landing) VALUES (?,?,?,?,1,?,?,?,?)')
-        .run(name, email, phone, token, lang, S(b.source, 40), S(b.utm, 500), S(b.landing, 300));
-      id = Number(info.lastInsertRowid);
+      /* 这个邮箱已经登记过。此处无法证明提交者就是本人 ——
+         任何人都能拿别人的邮箱来 POST。所以:
+           · 绝不回传已有记录的 token(它是读写该记录的唯一凭证)
+           · 绝不改动已有记录(否则等于让陌生人覆盖别人的意向、并解除其退订)
+         返回与新建完全同形的结果,连「是否已存在」都不透露,避免变成邮箱探测器。
+         本人要改意向,走当初那条专属链接;链接丢了只能由后台协助或日后邮件找回。 */
+      return res.json({ ok: true });
     }
-    saveInterests(id, interests);
-    /* 回传自助编辑链接:现在前端直接显示,将来群发邮件用同一个链接 */
-    res.json({ ok: true, updated: !!existing, profile_url: '/investors.html?token=' + token });
+    const token = newToken();
+    const info = db.prepare('INSERT INTO investors (name,email,phone,token,consent,lang,source,utm,landing) VALUES (?,?,?,?,1,?,?,?,?)')
+      .run(name, email, phone, token, lang, S(b.source, 40), S(b.utm, 500), S(b.landing, 300));
+    saveInterests(Number(info.lastInsertRowid), interests);
+    /* 仅新建时回传专属链接:这条记录的内容全部由本次提交者自己填写,不含他人数据 */
+    res.json({ ok: true, profile_url: '/investors.html?token=' + token });
   });
 
   /* ---------- 前台:凭 token 读回 / 更新 / 退订 ---------- */
@@ -170,7 +170,13 @@ CREATE INDEX IF NOT EXISTS idx_inv_interest_owner ON investor_interests(investor
   app.get('/api/admin/investors/export.csv', requireAuth, (req, res) => {
     const rows = db.prepare("SELECT * FROM investors WHERE ?='' OR status=? ORDER BY id")
       .all(String(req.query.status || ''), String(req.query.status || ''));
-    const cell = v => { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    /* 姓名电话来自公开表单(谁都能提交)。Excel 会把 = + - @ 开头的单元格当公式执行,
+       加引号也拦不住 —— 必须前置一个单引号,否则管理员一打开导出文件就可能中招。 */
+    const cell = v => {
+      v = v == null ? '' : String(v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '');
+      if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
+      return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
     const head = ['id', '姓名', '邮箱', '电话', '状态', '语言', '意向', '来源', '备注', '登记时间', '更新时间'];
     const body = rows.map(r => {
       const want = interestsOf(r.id).map(x => kindLabel(x.kind) + ' ' + rangeLabel(x.price_min, x.price_max)).join(' / ');

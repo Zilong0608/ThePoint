@@ -1845,10 +1845,11 @@
           const at = attribution();
           if (at) { body.source = at.source; if (at.utm) body.utm = JSON.stringify(at.utm); body.landing = at.landing; }
           const r = await post('/api/investors', body);
-          done(
-            r.updated
-              ? (en ? 'We already had your email — your criteria have been updated.' : '这个邮箱之前登记过,已为您更新意向。')
-              : (en ? 'Registered. We will be in touch when something matches.' : '登记成功。有匹配的房源时我们会联系您。'),
+          /* 无论邮箱是否已登记过,提示语都一样 —— 后端也不告诉我们,免得这里变成邮箱探测器。
+             只有新建成功时后端才会给专属链接,已登记的邮箱不会拿到别人的链接。 */
+          done(en
+            ? 'Thanks — we have your criteria. We will be in touch when something matches.'
+            : '已收到您的投资意向。有匹配的房源时我们会联系您。',
             r.profile_url || '');
         }
       } catch (ex) {

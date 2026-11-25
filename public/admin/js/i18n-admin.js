@@ -304,7 +304,7 @@
   const ATTRS = ['placeholder', 'title', 'aria-label'];
 
   /* &nbsp;( )与多余空白归一后再查词,否则「登&nbsp;录」这类匹配不上 */
-  const norm = s => String(s).replace(/ /g, ' ').replace(/s+/g, ' ').trim();
+  const norm = s => String(s).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
   const lookup = s => DICT[norm(s)];
 
   function translateNode(scope) {

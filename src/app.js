@@ -1194,7 +1194,13 @@ const HIDE_COLS = ['password_hash', 'salt', 'token'];
 function toCSV(rows) {
   if (!rows.length) return '﻿';
   const cols = Object.keys(rows[0]).filter(c => !HIDE_COLS.includes(c));
-  const cell = v => { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  /* 导出文件是给 Excel 打开的。= + - @ 开头的单元格会被当公式执行(CSV 注入),
+     而 users / enquiries / investors 这些表里有访客自由填写的内容,所以统一前置转义。 */
+  const cell = v => {
+    v = v == null ? '' : String(v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '');
+    if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
+    return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  };
   return '﻿' + cols.join(',') + '\n' + rows.map(r => cols.map(c => cell(r[c])).join(',')).join('\n');
 }
 app.get('/api/admin/export/csv/:table', requireAuth, (req, res) => {
