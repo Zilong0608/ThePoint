@@ -787,7 +787,7 @@
     const grid = $('#sec-grid');
     if (grid) grid.innerHTML = d.sections.map((s, i) => `
       <a class="sec-tile reveal in d${i % 3}" href="${TP.sectionUrl(s)}">
-        <div class="st-photo" style="background-image:url('${esc((SEC_IMG[s.slug] || SEC_IMG.living).replace('w=2000', 'w=900'))}')"></div>
+        <div class="st-photo" style="background-image:url('${esc(secImg(s.slug).replace('w=2000', 'w=900'))}')"></div>
         <div class="st-body">
           <span class="t-num">${String(i + 1).padStart(2, '0')}</span>
           <h3>${esc(TP.sname(s))}</h3>
@@ -821,8 +821,12 @@
     local: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=2000&q=80',     // 城市天际线暮色
     career: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=2000&q=80',    // 极简办公
     culture: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=2000&q=80',   // 图书馆书墙
-    news: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=2000&q=80'       // 报纸
+    news: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=2000&q=80',      // 报纸
+    trades: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=2000&q=80'     // 师傅实地作业(洗窗/水电/建筑)
   };
+  /* 这张表是按 slug 写死的,而板块可以在后台随时新增 ——
+     没有对应条目时必须有兜底,否则新板块的页面顶部会是一片空白。 */
+  const secImg = slug => SEC_IMG[slug] || SEC_IMG.living;
   async function pageSection() {
     const slug = param('s');
     const secs = await TP.sections();
@@ -838,7 +842,7 @@
     $('#sec-tagline').textContent = TP.L(sec, 'tagline');
     /* 板块顶部大图(与置业 page-top--banner 同款风格) */
     const banner = $('#sec-banner');
-    if (banner && SEC_IMG[slug]) banner.style.setProperty('--img', `url('${SEC_IMG[slug]}')`);
+    if (banner) banner.style.setProperty('--img', `url('${secImg(slug)}')`);
     /* 入驻申请入口:集市引导发布闲置,其余板块引导入驻 */
     const joinBtn = $('#sec-join');
     if (joinBtn) {
