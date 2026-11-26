@@ -67,7 +67,7 @@
     <div class="pd-enquiry" style="max-width:560px;margin:0 auto;text-align:left">
       <form data-api="/api/enquiries">
         <input type="hidden" name="type" value="service_apply">
-        <input name="name" placeholder="商户 / 联系人名称" required>
+        <input name="name" placeholder="商户 / 联系人名称" required minlength="2">
         <input name="phone" placeholder="联系电话" required>
         <input name="email" type="email" placeholder="邮箱">
         <textarea name="message" rows="4" placeholder="请简单介绍您的业务(类别、服务范围等)" required></textarea>

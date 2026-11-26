@@ -49,6 +49,7 @@
     privacy: ['隐私声明', 'Privacy'],
     disclaimer: ['免责声明', 'Disclaimer'],
     adminEntry: ['管理入口', 'Admin'],
+    investorRegister: ['投资意向登记', 'Investor register'],
     estate: ['一点房产', 'Estate'],
     experts: ['一点专家', 'Experts'],
     journal: ['一点资讯', 'Journal'],
@@ -223,7 +224,8 @@
       const A = {
         'experts.html': 'Experts', 'news.html': 'Journal', 'partners.html': 'Partners',
         'services.html': 'Services', 'join.html': t('join'), 'privacy.html': t('privacy'),
-        'disclaimer.html': t('disclaimer'), '/admin/': t('adminEntry')
+        'disclaimer.html': t('disclaimer'), '/admin/': t('adminEntry'),
+        'investors.html': t('investorRegister')
       };
       document.querySelectorAll('.site-footer a').forEach(a => {
         const href = a.getAttribute('href');

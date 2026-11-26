@@ -368,6 +368,9 @@ CREATE INDEX IF NOT EXISTS idx_content_versions ON content_versions(kind,ref_id,
   addCol('properties','floorplans',"TEXT DEFAULT '[]'");
   addCol('properties','updated_at',"TEXT DEFAULT ''");
   addCol('enquiries','viewing_at',"TEXT DEFAULT ''");
+  /* 客户自填的来意:question 咨询问题 / viewing 预约看房 / info_pack 索取资料 / callback 要求回电。
+     与 type(线索入口)分开存:同一个房源页既可能是问问题,也可能是要回电。 */
+  addCol('enquiries','intent',"TEXT DEFAULT ''");
   addCol('enquiries','lead_status',"TEXT DEFAULT 'new'");
   addCol('enquiries','assignee_id','INTEGER');
   addCol('enquiries','followup_version','INTEGER DEFAULT 0');

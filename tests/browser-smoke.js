@@ -145,10 +145,13 @@ async function poll(fn){let last;for(let i=0;i<120;i++){try{const value=await fn
   assert.equal(await evaluate("document.querySelector('.property-lightbox [data-counter]').textContent"),'2 / 3');
   await capture('09-property-gallery');
   await evaluate("document.querySelector('.property-lightbox [data-close]').click()");
-  await evaluate(`(()=>{const f=document.querySelector('form[data-api]');f.elements.type.value='viewing';f.elements.type.dispatchEvent(new Event('change'));f.elements.name.value='浏览器预约测试';f.elements.email.value='viewing@example.invalid';f.elements.viewing_at.value=${JSON.stringify(date+'T14:30')};f.requestSubmit();})()`);
+  await evaluate(`(()=>{const f=document.querySelector('form[data-api]');f.elements.intent.value='viewing';f.elements.intent.dispatchEvent(new Event('change'));f.elements.name.value='浏览器预约测试';f.elements.email.value='viewing@example.invalid';f.elements.viewing_at.value=${JSON.stringify(date+'T14:30')};f.requestSubmit();})()`);
   await poll(()=>evaluate("document.querySelector('[data-form-feedback]')?.textContent.includes('预约意向已提交')"));
   const bookings=await(await fetch(base+'/api/admin/enquiries',{headers:{Cookie:cookie.join('=')}})).json();
-  assert.equal(bookings.find(e=>e.type==='viewing').viewing_at,date+'T14:30');
+  const booking=bookings.find(e=>e.intent==='viewing');
+  assert.equal(booking.viewing_at,date+'T14:30');
+  assert.equal(booking.type,'property');          // type 记入口，intent 记客户要什么
+  assert.equal(booking.name,'浏览器预约测试');
   await send('Page.navigate',{url:base+'/admin/'});
   await poll(()=>evaluate("document.querySelectorAll('.stat-card').length>0"));
   await evaluate("document.querySelector('[data-tab=enquiries]').click()");

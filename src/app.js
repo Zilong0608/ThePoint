@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const { validateViewing } = require('./domain/property');
+const { INTENTS, resolveIntent, validateEnquiry } = require('./domain/enquiry');
 const { normalizeSchedule } = require('./domain/publication');
 const {createBackup,pruneBackups,spaceReport}=require('../scripts/backup');
 const adminPolicy=require('./security/admin-policy');
@@ -707,18 +708,18 @@ function pickAttr(b) {
 }
 app.post('/api/enquiries', (req, res) => {
   const b = req.body || {};
+  const intent = resolveIntent(b);
+  validateEnquiry(b, intent);                  /* 全名 / 问题 / 联系方式够不够用 */
   let viewingAt = '', property = null;
-  if (b.type === 'viewing') {
+  if (intent === 'viewing') {
     property = db.prepare('SELECT id,agent_id,status FROM properties WHERE id=?').get(Number(b.property_id));
     viewingAt = validateViewing(b,property);
   }
-  if (!b.message && b.type !== 'subscribe' && b.type !== 'viewing') return res.status(400).json({ error: '请填写留言内容' });
-  if (b.type === 'subscribe' && !b.email) return res.status(400).json({ error: '请填写邮箱' });
   if (b.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(b.email))) return res.status(400).json({ error: '邮箱格式不正确' });
   const vendorId = b.vendor_id ? Number(b.vendor_id) : null;
   const at = pickAttr(b);
-  db.prepare('INSERT INTO enquiries (type,name,email,phone,message,agent_id,property_id,vendor_id,source,ad_id,utm,landing,viewing_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(String(b.type || 'general'), String(b.name || '').slice(0, 100), String(b.email || '').slice(0, 200),
+  db.prepare('INSERT INTO enquiries (type,intent,name,email,phone,message,agent_id,property_id,vendor_id,source,ad_id,utm,landing,viewing_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(String(b.type || 'general'), intent, String(b.name || '').slice(0, 100), String(b.email || '').slice(0, 200),
       String(b.phone || '').slice(0, 50), String(b.message || '').slice(0, 5000),
       property ? property.agent_id : b.agent_id ? Number(b.agent_id) : null, b.property_id ? Number(b.property_id) : null, vendorId,
       at.source, at.ad_id, at.utm, at.landing, viewingAt);
@@ -727,9 +728,12 @@ app.post('/api/enquiries', (req, res) => {
   /* 给入驻方留言 → 站内通知对方 */
   if (vendorId) {
     const v = db.prepare('SELECT user_id,name_zh FROM vendors WHERE id=?').get(vendorId);
+    /* 标题里带上来意,对方不用点进来才知道是问问题还是要回电 */
+    const iz = { question: '咨询问题', viewing: '预约看房', info_pack: '索取资料', callback: '要求回电' }[intent] || '新留言';
+    const ie = { question: 'Question', viewing: 'Viewing request', info_pack: 'Info pack request', callback: 'Call-back request' }[intent] || 'New enquiry';
     if (v) notify(v.user_id, {
       type: 'enquiry',
-      title_zh: '收到一条新留言', title_en: 'New enquiry received',
+      title_zh: `收到一条新留言 · ${iz}`, title_en: `New enquiry · ${ie}`,
       body_zh: `${String(b.name || '访客').slice(0, 50)}:${String(b.message || '').slice(0, 120)}`,
       body_en: `${String(b.name || 'Guest').slice(0, 50)}: ${String(b.message || '').slice(0, 120)}`,
       link: 'me.html#enquiries'
@@ -1228,6 +1232,15 @@ app.get('/api/admin/export/db', requireAuth, (req, res) => {
 app.get('/api/admin/enquiries', requireAuth, (req, res) => {
   const where=[], args=[];
   if(req.query.status){where.push('e.lead_status=?');args.push(String(req.query.status));}
+  /* 按来意分流:姑姑要能一眼挑出「等着回电」和「等着发资料」的 */
+  if(req.query.intent){
+    const want=String(req.query.intent);
+    if(!INTENTS.includes(want))return res.status(400).json({error:'无效的咨询方式'});
+    /* 老数据 intent 为空:type=viewing 当作看房,其余当作咨询问题 */
+    if(want==='viewing')where.push("(e.intent='viewing' OR (e.intent='' AND e.type='viewing'))");
+    else if(want==='question')where.push("(e.intent='question' OR (e.intent='' AND e.type NOT IN ('viewing','subscribe')))");
+    else {where.push('e.intent=?');args.push(want);}
+  }
   if(req.query.q){where.push('(e.name LIKE ? OR e.email LIKE ? OR e.phone LIKE ? OR e.message LIKE ? OR p.title LIKE ?)');const q='%'+String(req.query.q).slice(0,100)+'%';args.push(q,q,q,q,q);}
   const rows = db.prepare(`
     SELECT e.*, a.name AS agent_name, p.title AS property_title, v.name_zh AS vendor_name, adm.username AS assignee_name

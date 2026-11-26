@@ -2,26 +2,30 @@
   'use strict';
   const esc=TPContent.esc;
   const labels={new:'待联系',contacted:'已联系',scheduled:'已预约',closed:'已结束'};
-  const filters={q:'',status:''};
+  const filters={q:'',status:'',intent:''};
+  /* 客户自填的来意。老数据 intent 为空,按 type 推断,后台看着才不会一片空白。 */
+  const intentOf=r=>r.intent||(r.type==='viewing'?'viewing':(r.type==='subscribe'?'':'question'));
   async function enquiries(root,ctx){
     const panel=document.createElement('div');root.replaceChildren(panel);
     panel.innerHTML=`<h2>客户跟进</h2><p class="sub">跟踪留言和预约，分配现有管理员，保存内部备注与处理记录。状态和备注不会公开给访客。</p>
-      <form class="lead-filters"><input name="q" placeholder="搜索姓名、电话、邮箱、房源或留言" value="${esc(filters.q)}"><select name="status"><option value="">全部状态</option>${Object.entries(labels).map(([k,v])=>`<option value="${k}"${filters.status===k?' selected':''}>${v}</option>`).join('')}</select><button class="btn btn--sm btn--solid" type="submit">筛选</button></form><p data-lead-message role="status" class="editor-note"></p><div data-leads>加载中…</div>`;
+      <form class="lead-filters"><input name="q" placeholder="搜索姓名、电话、邮箱、房源或留言" value="${esc(filters.q)}"><select name="status"><option value="">全部状态</option>${Object.entries(labels).map(([k,v])=>`<option value="${k}"${filters.status===k?' selected':''}>${v}</option>`).join('')}</select><select name="intent"><option value="">全部来意</option>${Object.entries(ctx.INTENT_LABEL).map(([k,v])=>`<option value="${k}"${filters.intent===k?' selected':''}>${v}</option>`).join('')}</select><button class="btn btn--sm btn--solid" type="submit">筛选</button></form><p data-lead-message role="status" class="editor-note"></p><div data-leads>加载中…</div>`;
     const list=panel.querySelector('[data-leads]'),filter=panel.querySelector('form');let generation=0;
     let owners;
     try{owners=await ctx.api('/api/admin/enquiry-owners');}catch(e){list.textContent=e.message;return;}
     async function load(){
-      const token=++generation;filters.q=filter.elements.q.value.trim();filters.status=filter.elements.status.value;
+      const token=++generation;filters.q=filter.elements.q.value.trim();filters.status=filter.elements.status.value;filters.intent=filter.elements.intent.value;
       panel.querySelector('[data-lead-message]').textContent='正在读取…';
       try{
         const rows=await ctx.api('/api/admin/enquiries?'+new URLSearchParams(filters));
         if(token!==generation||!panel.isConnected)return;
         panel.querySelector('[data-lead-message]').textContent=`共 ${rows.length} 条`;
         list.innerHTML=rows.length?rows.map(r=>`<article class="msgcard${r.is_read?'':' unread'}" data-lead="${r.id}">
-          <div class="mh"><div><span class="tag">${ctx.TYPE_LABEL[r.type]||esc(r.type)}</span> <b>${esc(r.name||'未留名')}</b> <span class="tag lead-badge">${labels[r.lead_status]||'待联系'}</span></div><span class="meta">${esc(r.created_at)}</span></div>
+          <div class="mh"><div><span class="tag">${ctx.TYPE_LABEL[r.type]||esc(r.type)}</span>${intentOf(r)?` <span class="tag tag--intent">${ctx.INTENT_LABEL[intentOf(r)]||esc(intentOf(r))}</span>`:''} <b>${esc(r.name||'未留名')}</b> <span class="tag lead-badge">${labels[r.lead_status]||'待联系'}</span></div><span class="meta">${esc(r.created_at)}</span></div>
           <p class="meta">${[r.phone,r.email].filter(Boolean).map(esc).join(' · ')}</p>
           ${r.property_title?`<p class="meta">房源：${esc(r.property_title)}</p>`:''}${r.agent_name?`<p class="meta">负责专家：${esc(r.agent_name)}</p>`:''}${r.vendor_name?`<p class="meta">入驻方：${esc(r.vendor_name)}</p>`:''}
           ${r.viewing_at?`<p class="viewing-request">意向看房时间：${esc(r.viewing_at.replace('T',' '))}（新西兰时间） · <span class="lead-viewing-state">${labels[r.lead_status]||'待联系'}</span></p>`:''}
+          ${intentOf(r)==='callback'?`<p class="viewing-request">客户要求经纪人回电：${esc(r.phone||'未留电话')} · <span class="lead-viewing-state">${labels[r.lead_status]||'待联系'}</span></p>`:''}
+          ${intentOf(r)==='info_pack'?`<p class="viewing-request">客户索取资料，请发送至：${esc(r.email||r.phone||'未留联系方式')} · <span class="lead-viewing-state">${labels[r.lead_status]||'待联系'}</span></p>`:''}
           ${r.source?`<p class="meta">来源：${esc(ctx.SRC_LABEL[r.source]||r.source)}${ctx.utmText(r.utm)}</p>`:''}
           ${r.message?`<p>${esc(r.message)}</p>`:''}
           <form class="followup-form"><div class="followup-grid"><label>跟进状态<select name="lead_status">${Object.entries(labels).map(([k,v])=>`<option value="${k}"${r.lead_status===k?' selected':''}>${v}</option>`).join('')}</select></label><label>后台负责人<select name="assignee_id"><option value="">未分配</option>${owners.map(o=>`<option value="${o.id}"${r.assignee_id===o.id?' selected':''}>${esc(o.username)}</option>`).join('')}</select></label></div>

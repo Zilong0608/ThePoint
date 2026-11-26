@@ -70,6 +70,16 @@
     '找匹配的投资者': 'Find matching investors', '导出名单 CSV': 'Export CSV',
     '搜姓名 / 邮箱 / 电话': 'Search name / email / phone',
 
+    /* --- 线索入口 --- */
+    '预约洽谈': 'Consultation request', '专家留言': 'Message to an expert',
+    '房源咨询': 'Property enquiry', '订阅': 'Subscription',
+    '商户入驻申请': 'Provider application', '入驻方留言': 'Message to a provider',
+
+    /* --- 客户来意 --- */
+    '全部来意': 'All request types',
+    '咨询问题': 'Ask a question', '预约看房': 'Request a viewing',
+    '索取资料': 'Request an info pack', '要求回电': 'Call-back request',
+
     /* --- 角色 --- */
     '地产经纪': 'Agent', '商家伙伴': 'Business associate', '工种服务': 'Trade',
 

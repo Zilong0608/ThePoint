@@ -142,8 +142,83 @@
     try { return JSON.parse(sessionStorage.getItem(ATTR_KEY) || 'null'); } catch (e) { return null; }
   }
 
+  /* ---------- 咨询意图(让客户自己把来意填清楚,省掉来回电话) ----------
+     四种:咨询问题 / 预约看房 / 索取资料 / 请经纪人回电。
+     哪些页面放哪几种,由各处调 intentSelect() 时决定;交互统一在 bindIntent() 里。 */
+  const INTENT_TEXT = {
+    question:  { zh: '咨询问题',      en: 'Ask a question' },
+    viewing:   { zh: '预约看房',      en: 'Request a viewing' },
+    info_pack: { zh: '索取资料',      en: 'Request an info pack' },
+    callback:  { zh: '请经纪人回电',  en: 'Ask the agent to call me' }
+  };
+  const INTENT_BTN = {
+    question:  { zh: '发送咨询',      en: 'Send enquiry' },
+    viewing:   { zh: '提交看房意向',  en: 'Request viewing' },
+    info_pack: { zh: '索取资料',      en: 'Request info pack' },
+    callback:  { zh: '请经纪人回电',  en: 'Request a call' }
+  };
+  const INTENT_NOTE = {
+    question:  { zh: '', en: '' },
+    viewing:   { zh: '提交的是预约意向,工作人员联系确认后才算预约成功。请至少填写电话或邮箱。', en: 'This is a request, not a confirmed booking. We will contact you to confirm. Please leave a phone number or an email.' },
+    info_pack: { zh: '我们会把相关资料发到您填写的邮箱,请至少填写邮箱或电话。', en: 'We will email you the information pack, so please leave an email or a phone number.' },
+    callback:  { zh: '请留下可接通的电话,经纪人会在工作时间内致电您。', en: 'Please leave a number we can reach you on; the agent will call during business hours.' }
+  };
+  const INTENT_DONE = {
+    question:  { zh: '留言已发送,我们会尽快回复。', en: 'Message sent. We will reply shortly.' },
+    viewing:   { zh: '预约意向已提交,我们会联系您确认看房时间。', en: 'Request received. We will contact you to confirm the viewing time.' },
+    info_pack: { zh: '已收到,资料会尽快发到您的邮箱。', en: 'Received. We will email you the information pack shortly.' },
+    callback:  { zh: '已收到,经纪人会尽快致电您。', en: 'Received. The agent will call you shortly.' }
+  };
+  const iText = (map, key) => (map[key] || map.question)[TP.lang === 'en' ? 'en' : 'zh'];
+
+  /* 生成「咨询方式」下拉 + 配套的意向时间字段与提示行。keys 决定这一页提供哪几种。 */
+  function intentSelect(keys) {
+    const en = TP.lang === 'en';
+    return `<label class="viewing-label">${en ? 'How can we help?' : '咨询方式'}
+        <select name="intent">${keys.map(k => `<option value="${k}">${iText(INTENT_TEXT, k)}</option>`).join('')}</select></label>`;
+  }
+  function viewingField() {
+    const en = TP.lang === 'en';
+    return `<label class="viewing-label" data-viewing-field hidden>${en ? 'Preferred time (New Zealand time)' : '意向时间(新西兰时间)'}<input name="viewing_at" type="datetime-local"></label>`;
+  }
+  const intentNoteEl = '<p class="viewing-note" data-intent-note hidden></p>';
+
+  /* 下拉一变,表单跟着变:该显示的字段、该必填的字段、按钮文字、提示行 */
+  function bindIntent(form) {
+    const sel = form.elements.intent;
+    if (!sel) return;
+    const btn = $('button[type=submit]', form) || $('button', form);
+    const message = form.elements.message, phone = form.elements.phone, email = form.elements.email;
+    const viewingAt = form.elements.viewing_at, note = $('[data-intent-note]', form);
+    const needsContact = v => v === 'viewing' || v === 'info_pack' || v === 'callback';
+    function sync() {
+      const v = sel.value;
+      $$('[data-viewing-field]', form).forEach(el => { el.hidden = v !== 'viewing'; });
+      if (viewingAt) { viewingAt.required = v === 'viewing'; viewingAt.disabled = v !== 'viewing'; }
+      if (message) message.required = v === 'question';        /* 其余三种来意本身已说明问题 */
+      if (phone) phone.required = v === 'callback';             /* 要回电必须有电话 */
+      /* 只有标了 data-intent-button 的表单才让按钮跟着来意变文字,
+         首页那颗「预约私人洽谈」保留它自己的说法 */
+      if (btn && form.hasAttribute('data-intent-button')) btn.textContent = iText(INTENT_BTN, v);
+      if (note) { const t = iText(INTENT_NOTE, v); note.textContent = t; note.hidden = !t; }
+      if (phone) phone.setCustomValidity('');
+    }
+    sel.addEventListener('change', sync);
+    form.addEventListener('reset-complete', sync);
+    /* 捕获阶段先跑,挡住「要我们联系却没留任何联系方式」 */
+    form.addEventListener('submit', e => {
+      if (needsContact(sel.value) && !(phone && phone.value.trim()) && !(email && email.value.trim())) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (phone) { phone.setCustomValidity(TP.lang === 'en' ? 'Please enter a phone number or email.' : '请至少填写电话或邮箱'); phone.reportValidity(); }
+      }
+    }, true);
+    [phone, email].forEach(el => el && el.addEventListener('input', () => phone && phone.setCustomValidity('')));
+    sync();
+  }
+
   function bindForms(root) {
     $$('form[data-api]', root).forEach(f => {
+      bindIntent(f);                           /* 有 name=intent 下拉的表单自动接上 */
       f.addEventListener('submit', async e => {
         e.preventDefault();
         const btn = $('button[type=submit]', f) || $('button', f);
@@ -163,7 +238,8 @@
           await post(f.dataset.api, body);
           let feedback=$('[data-form-feedback]',f);
           if(!feedback){feedback=document.createElement('p');feedback.dataset.formFeedback='';feedback.className='form-feedback';feedback.setAttribute('role','status');f.append(feedback);}
-          feedback.textContent=body.type==='viewing' ? (TP.lang==='en'?'Request received. We will contact you to confirm the viewing time.':'预约意向已提交，我们会联系您确认看房时间。') : (TP.lang==='en'?'Message sent.':'留言已发送。');
+          const done=body.intent || (body.type==='viewing'?'viewing':'');
+          feedback.textContent=done ? iText(INTENT_DONE,done) : (TP.lang==='en'?'Message sent.':'留言已发送。');
           f.reset();
           f.dispatchEvent(new Event('reset-complete'));
           if (btn) btn.textContent = TP.t('sent');
@@ -369,15 +445,16 @@
           </div>` : ''}
           <div class="pd-enquiry">
             <h4>${pen ? 'Enquire about this home' : '咨询此房源'}</h4>
-            <form data-api="/api/enquiries">
-              <label class="viewing-label">${pen?'How can we help?':'咨询方式'}<select name="type"><option value="property">${pen?'Ask a question':'咨询房源'}</option>${['在售','在租'].includes(p.status)?`<option value="viewing">${pen?'Request a viewing':'预约看房'}</option>`:''}</select></label>
+            <form data-api="/api/enquiries" data-intent-button>
+              <input type="hidden" name="type" value="property">
+              ${intentSelect(['在售','在租'].includes(p.status) ? ['question','viewing','info_pack','callback'] : ['question','info_pack','callback'])}
               <input type="hidden" name="property_id" value="${p.id}">
               ${agent ? `<input type="hidden" name="agent_id" value="${agent.id}">` : ''}
-              <input name="name" placeholder="${pen ? 'Your name' : '您的称呼'}" required>
+              <input name="name" placeholder="${pen ? 'Full name' : '姓名（请填全名）'}" required minlength="2">
               <input name="phone" placeholder="${pen ? 'Phone' : '联系电话'}">
               <input name="email" type="email" placeholder="${pen ? 'Email' : '邮箱'}">
-              <label class="viewing-label" data-viewing-field hidden>${pen?'Preferred time (New Zealand time)':'意向时间（新西兰时间）'}<input name="viewing_at" type="datetime-local"></label>
-              <p class="viewing-note" data-viewing-field hidden>${pen?'This is a request, not a confirmed booking. We will contact you to confirm.':'提交的是预约意向，工作人员联系确认后才算预约成功。请至少填写电话或邮箱。'}</p>
+              ${viewingField()}
+              ${intentNoteEl}
               <textarea name="message" rows="4" placeholder="${pen ? 'What would you like to know…' : '想了解些什么…'}" required></textarea>
               <button class="btn btn--solid" type="submit" style="width:100%;justify-content:center">${pen ? 'Send enquiry' : '发送咨询'}</button>
             </form>
@@ -394,23 +471,7 @@
     const allPhotos=imgs.concat(p.floorplans || []);
     $('#pd-main').addEventListener('click',()=>openPropertyPhotos(allPhotos,currentPhoto,TP.L(p,'title')));
     $$('[data-floorplan]',box).forEach(b=>b.addEventListener('click',()=>openPropertyPhotos(allPhotos,imgs.length+Number(b.dataset.floorplan),TP.L(p,'title'))));
-    const form=$('form[data-api]',box);
-    function viewingMode(){
-      const viewing=form.elements.type.value==='viewing';
-      $$('[data-viewing-field]',form).forEach(el=>{el.hidden=!viewing;});
-      form.elements.viewing_at.required=viewing;form.elements.message.required=!viewing;
-      form.elements.viewing_at.disabled=!viewing;
-      form.querySelector('button[type=submit]').textContent=viewing?(pen?'Request viewing':'提交看房意向'):(pen?'Send enquiry':'发送咨询');
-      form.elements.phone.setCustomValidity('');
-    }
-    form.elements.type.addEventListener('change',viewingMode);form.addEventListener('reset-complete',viewingMode);viewingMode();
-    form.addEventListener('submit',e=>{
-      if(form.elements.type.value==='viewing'&&!form.elements.phone.value.trim()&&!form.elements.email.value.trim()){
-        e.preventDefault();e.stopImmediatePropagation();form.elements.phone.setCustomValidity(pen?'Please enter a phone number or email.':'请至少填写电话或邮箱');form.elements.phone.reportValidity();
-      }
-    },true);
-    [form.elements.phone,form.elements.email].forEach(el=>el.addEventListener('input',()=>form.elements.phone.setCustomValidity('')));
-    bindForms(box);
+    bindForms(box);                            /* 咨询方式的联动交给 bindIntent() 统一处理 */
     reveal(box);
   }
 
@@ -495,12 +556,14 @@
       </div>
       <div class="ex-section pd-enquiry" style="max-width:640px">
         <h4>给 ${esc(a.name)} 留言</h4>
-        <form data-api="/api/enquiries">
+        <form data-api="/api/enquiries" data-intent-button>
           <input type="hidden" name="type" value="agent">
           <input type="hidden" name="agent_id" value="${a.id}">
-          <input name="name" placeholder="您的称呼" required>
+          ${intentSelect(['question','callback','info_pack'])}
+          <input name="name" placeholder="${TP.lang==='en'?'Full name':'姓名（请填全名）'}" required minlength="2">
           <input name="phone" placeholder="联系电话">
           <input name="email" type="email" placeholder="邮箱">
+          ${intentNoteEl}
           <textarea name="message" rows="4" placeholder="想咨询些什么…" required></textarea>
           <button class="btn btn--solid" type="submit">发送留言</button>
         </form>
@@ -763,10 +826,14 @@
       /* 预约表单英文 */
       const cf = $('#contact form');
       if (cf) {
-        const ph = { name: 'Your name', phone: 'Phone', email: 'Email', message: 'What would you like to talk about…' };
+        const ph = { name: 'Full name', phone: 'Phone', email: 'Email', message: 'What would you like to talk about…' };
         Object.entries(ph).forEach(([k, v]) => { const el = cf.querySelector(`[name=${k}]`); if (el) el.placeholder = v; });
         const btn = cf.querySelector('button[type=submit]');
         if (btn) btn.textContent = 'Book a private consultation';
+        /* 「咨询方式」下拉也要跟着切语言 */
+        const il = cf.querySelector('#cta-intent-label');
+        if (il) il.childNodes[0].nodeValue = 'How can we help?';
+        cf.querySelectorAll('select[name=intent] option').forEach(o => { o.textContent = iText(INTENT_TEXT, o.value); });
       }
       set('#promise-title', 'New Zealand, handed to you at one point');
       set('#promise-p1', 'From a home to a trusted advisor, the right school, an effortless move — every step of settling in deserves to be taken seriously.');
@@ -1032,12 +1099,14 @@
       </div>
       <div class="ex-section pd-enquiry" style="max-width:640px">
         <h4>${TP.t('leaveMsg')}</h4>
-        <form data-api="/api/enquiries">
+        <form data-api="/api/enquiries" data-intent-button>
           <input type="hidden" name="type" value="vendor">
           <input type="hidden" name="vendor_id" value="${v.id}">
-          <input name="name" placeholder="${TP.lang === 'en' ? 'Your name' : '您的称呼'}" required>
+          ${intentSelect(['question','callback'])}
+          <input name="name" placeholder="${TP.lang === 'en' ? 'Full name' : '姓名（请填全名）'}" required minlength="2">
           <input name="phone" placeholder="${TP.lang === 'en' ? 'Phone' : '联系电话'}">
           <input name="email" type="email" placeholder="${TP.lang === 'en' ? 'Email' : '邮箱'}">
+          ${intentNoteEl}
           <textarea name="message" rows="4" placeholder="${TP.lang === 'en' ? 'Your message…' : '想咨询些什么…'}" required></textarea>
           <button class="btn btn--solid" type="submit">${TP.t('send')}</button>
         </form>

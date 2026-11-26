@@ -1381,6 +1381,8 @@ async function renderSubscribers() {
 
 /* ================= 留言 ================= */
 const TYPE_LABEL = { general: '预约洽谈', agent: '专家留言', property: '房源咨询', viewing:'预约看房', subscribe: '订阅', service_apply: '商户入驻申请', vendor: '入驻方留言' };
+/* 客户自填的来意。type 记录从哪个入口来，intent 记录他要什么。 */
+const INTENT_LABEL = { question: '咨询问题', viewing: '预约看房', info_pack: '索取资料', callback: '要求回电' };
 /* 轻量操作提示(替代部分 alert) */
 function toast(msg) {
   let t = $('#toast');
@@ -1408,7 +1410,7 @@ function utmText(j) {
   } catch (e) { return ''; }
 }
 async function renderEnquiries() {
-  return TPOperations.enquiries(main,{api,put,del,toast,refreshBadge,TYPE_LABEL,SRC_LABEL,utmText});
+  return TPOperations.enquiries(main,{api,put,del,toast,refreshBadge,TYPE_LABEL,INTENT_LABEL,SRC_LABEL,utmText});
 }
 
 /* ================= 设置 ================= */
