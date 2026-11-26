@@ -93,6 +93,12 @@
     if(document.querySelector('[data-favorite]')){loadFavorites();paintFavorites();}
   });
   document.addEventListener('DOMContentLoaded',()=>favoriteObserver.observe(document.body,{childList:true,subtree:true}));
+  /* 卡片标题:优先房源名称(同一城区的几套房不能顶着一模一样的标题)。
+     英文站若没填英文标题,退回城区 —— 否则中文标题会漏到英文页上。
+     后台「房源管理 · 英文标题」填好之后,这里自然就用英文名了。 */
+  function cardTitle(p) {
+    return TP.lang === 'en' ? (p.title_en || p.suburb || p.title || '') : (p.title || p.suburb || '');
+  }
   function propCard(p, i) {
     const status={ '已售': ['已售','Sold'], '已租':['已租','Let'], '在租':['出租','For rent'] }[p.status];
     const badge = status ? status[TP.lang==='en'?1:0] : (p.open_home ? 'Open Home' : (TP.lang==='en'?'For sale':'出售'));
@@ -100,7 +106,7 @@
       <div class="ltop"><span>${esc(badge)}</span><b>${esc(propertyPrice(p))}</b></div>
       <div class="lphoto" style="background-image:url('${esc(p.cover || 'media/logo.svg')}')"></div>
       <div class="lbody">${favoriteButton(p.id)}${typeof p.latitude==='number'&&typeof p.longitude==='number'?`<button type="button" class="map-location-button" data-map-focus="${p.id}" onclick="event.stopPropagation()">${TP.lang==='en'?'Show on map':'地图定位'}</button>`:''}
-        <div class="lrow"><h3>${esc(p.suburb || p.title)}</h3><div class="lspecs">${specsHTML(p)}</div></div>
+        <div class="lrow"><h3>${esc(cardTitle(p))}</h3><div class="lspecs">${specsHTML(p)}</div></div>
         <p class="laddr">${esc(p.address || p.title)}</p>
       </div>
     </article>`;
@@ -264,7 +270,9 @@
     let pageNo = 1, lastQuery = {};
     const en = TP.lang === 'en';
     const resultLayout=$('#property-results'),mapPanel=$('#property-map-panel'),mapStatus=$('#property-map-status');
-    let selectedView=['map','grid','list'].includes(param('view'))?param('view'):'map',mapController,mapStarting,loadEpoch=0;
+    /* 默认用网格:房源不多时一上来就是半屏地图 + 挤成一条的卡片,很难看。
+       地图仍在,点「地图找房」一下就到。 */
+    let selectedView=['map','grid','list'].includes(param('view'))?param('view'):'grid',mapController,mapStarting,loadEpoch=0;
     let mapData=null;
     async function ensureMap(){
       if(mapController)return mapController;

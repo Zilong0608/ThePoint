@@ -52,6 +52,8 @@
     investorRegister: ['投资意向登记', 'Investor register'],
     estate: ['一点房产', 'Estate'],
     experts: ['一点专家', 'Experts'],
+    /* 顶部导航用短名,与「置业 / 顾问 / 教育」同一套说法;页脚仍是「一点专家」 */
+    expertsNav: ['专家', 'Experts'],
     journal: ['一点资讯', 'Journal'],
     partners: ['一点伙伴', 'Partners'],
     services: ['一点服务', 'Services'],
@@ -163,6 +165,12 @@
         const url = sectionUrl(s);
         const on = (s.slug === 'property' && here === 'properties.html') || (s.slug === 'news' && here === 'news.html') || (here === 'section.html' && curSlug === s.slug);
         items.push(`<a ${on ? 'class="active"' : ''} href="${url}">${esc(sname(s))}</a>`);
+        /* 专家页不是板块,所以不在 secs 里,但它是 MARS 最核心的入口。
+           这里挂在「置业」后面 —— 否则 buildNav 覆写导航时它只剩页脚一个入口。 */
+        if (s.slug === 'property') {
+          const onEx = here === 'experts.html' || here === 'expert.html';
+          items.push(`<a ${onEx ? 'class="active"' : ''} href="experts.html">${t('expertsNav')}</a>`);
+        }
       });
       items.push(`<a ${here==='council.html'?'class="active"':''} href="council.html">${t('council')}</a>`);
       items.push(u
@@ -185,7 +193,10 @@
     if (drawer) {
       const close = `<button class="close" aria-label="${t('close')}">&times;</button>`;
       const items = [`<a href="index.html">${t('home')}</a>`];
-      secs.forEach(s => items.push(`<a href="${sectionUrl(s)}">${esc(sname(s))}</a>`));
+      secs.forEach(s => {
+        items.push(`<a href="${sectionUrl(s)}">${esc(sname(s))}</a>`);
+        if (s.slug === 'property') items.push(`<a href="experts.html">${t('experts')}</a>`);
+      });
       items.push(`<a href="council.html">${t('council')}</a>`);
       items.push(`<a href="search.html">${t('search')}</a>`);
       items.push(u ? `<a href="me.html">${t('me')}${u.unread_notifications ? ` <i class="ndot" style="position:static;display:inline-flex">${u.unread_notifications}</i>` : ''}</a>` : `<a href="account.html">${t('login')}</a>`);

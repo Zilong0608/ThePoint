@@ -233,8 +233,8 @@ section{position:relative;z-index:1}
 .lphoto .badge{position:absolute;bottom:0;left:0;right:0;text-align:center;background:rgba(32,31,27,.86);color:#EFE9DA;font-size:12.5px;letter-spacing:.16em;padding:9px;font-weight:500}
 .lphoto .badge.sold{background:rgba(108,46,40,.92);color:#fff}
 .lbody{padding:18px 20px 22px}
-.lbody .lrow{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.lbody h3{font-size:22px;color:var(--ink-1);font-weight:600}
+.lbody .lrow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.lbody h3{font-size:22px;color:var(--ink-1);font-weight:600;min-width:0;overflow-wrap:anywhere}
 .lspecs{display:flex;gap:14px;color:var(--ink-2);font-size:14px;flex-wrap:wrap}
 .lspecs span{display:flex;align-items:center;gap:5px}
 .lspecs svg{width:16px;height:16px;stroke:var(--ink-3);fill:none;stroke-width:1.6}
@@ -741,7 +741,8 @@ body{background:linear-gradient(90deg,#E9E4D6 0,var(--paper) 140px,var(--paper) 
 
 /* 导航宽度自适应:中屏隐藏英文副标,窄屏提前收进抽屉 */
 @media(max-width:1460px){.nav a .en{display:none}.nav{gap:20px}.nav a{font-size:14px}}
-@media(max-width:1130px){.nav{display:none}.burger{display:flex}}
+/* 导航自然宽度约 1138px;断点定在 1250,免得窄屏笔记本上 logo 被挤扁 */
+@media(max-width:1250px){.nav{display:none}.burger{display:flex}}
 
 /* 板块页页头 */
 body[data-page="section"] .page-top .section-title{font-size:clamp(30px,4.6vw,44px)}
