@@ -121,4 +121,72 @@ db.prepare(`INSERT OR IGNORE INTO suburbs (name, sort_order)
     db.prepare('UPDATE sections SET sort_order=? WHERE slug=?').run(n, slug));
 }
 
+/* ---------- 首批真实内容:MARS 专家、在售房源、合作伙伴 ----------
+   配图都在 public/media/ 里随代码一起发布,不依赖持久化磁盘,所以这里只补数据库记录。
+
+   每张表「只在为空时」写入。这一点是刻意的:后台把某条删掉或改过之后,
+   下次部署不会再把它塞回来 —— 按条去「有则跳过」会让删除永远删不干净。 */
+{
+  if (db.prepare('SELECT COUNT(*) c FROM agents').get().c === 0) {
+    const AGENTS = [
+      /* name, category, email, phone, photo, bio, visible */
+      ['Celia Wang', '地产', 'celia.wang@marsrealty.co.nz', '027 363 9990', 'media/agent-celia.jpg', '深耕奥克兰高端住宅市场多年,以专业与审慎陪伴每一位客户。', 1],
+      ['Rod Macfarlane', '地产', 'rodmac006@gmail.com', '021 755 588', 'media/agent-rod.jpg', '', 1],
+      ['Asli Can', '地产', 'asli@marsrealty.co.nz', '027 366 7776', 'media/agent-asli.jpg', '', 1],
+      ['Nik Butler', '地产', '', '022 460 5080', 'media/agent-nik.jpg', '', 1],
+      /* 名字还没拿到,先隐藏:正式站上挂一个「姓名待补充」不好看。
+         后台「专家管理」补好姓名后把「显示」打开即可。 */
+      ['金融顾问(姓名待补充)', '金融', '', '021 796 865', 'media/agent-finance.jpg', '', 0],
+      ['Ben Zhao', '租务', '', '027 466 2399', 'media/agent-ben.jpg', '', 1]
+    ];
+    const insA = db.prepare('INSERT INTO agents (name,category,email,phone,photo,bio,visible,sort_order) VALUES (?,?,?,?,?,?,?,?)');
+    AGENTS.forEach((a, i) => insA.run(a[0], a[1], a[2], a[3], a[4], a[5], a[6], i + 1));
+    console.log(`已写入 ${AGENTS.length} 位专家(其中「金融顾问」待补姓名,暂设为不显示)`);
+  }
+
+  if (db.prepare('SELECT COUNT(*) c FROM partners').get().c === 0) {
+    const PARTNERS = [
+      ['Crimson', ''], ['Portal Studio', ''], ['K3 Consulting Accounting Legal', ''],
+      ['Hilton Queenstown Resort & Spa', ''], ['Cato Bolam', ''], ['open2view.com', ''],
+      ['Archiland 奥克兰建筑设计院', ''], ['AEQ Furniture 美惠优家俱城', ''], ['Whitlock Williams', ''],
+      ['Pinehill Homes Ltd', ''], ['NZ International Trust & Investment Co. Ltd', ''],
+      ['Mars Realty', 'https://www.marsrealty.co.nz/rent']
+    ];
+    const insP = db.prepare('INSERT INTO partners (name,logo,url,sort_order,visible) VALUES (?,?,?,?,1)');
+    PARTNERS.forEach((p, i) => insP.run(p[0], `media/partner-${i + 1}.jpg`, p[1], i + 1));
+    console.log(`已写入 ${PARTNERS.length} 家合作伙伴`);
+  }
+
+  if (db.prepare('SELECT COUNT(*) c FROM properties').get().c === 0) {
+    /* 按姓名找专家,找不到就留空 —— 不能假设专家 id 一定是 1、2 */
+    const agentId = name => (db.prepare('SELECT id FROM agents WHERE name=?').get(name) || {}).id || null;
+    const PROPS = [
+      { title: 'Albany 精品公寓', address: '104, 22 Library Lane, Albany', suburb: 'Albany', type: '公寓 / Apartment',
+        price_label: '价格待询', beds: 1, baths: 1, garages: 1, land_area: '',
+        description: '位于 Albany 核心地段的精品公寓,近商圈、学校与公共交通,自住投资皆宜。',
+        image: 'media/prop-albany-1.jpg', agent: 'Celia Wang', featured: 1, lat: -36.7268837, lng: 174.6964785 },
+      { title: 'Albany 双拼地块', address: '20 & 22 Waihou Crescent, Albany', suburb: 'Albany', type: '地产 / Land',
+        price_label: '价格待询', beds: null, baths: null, garages: null, land_area: '192m²',
+        description: '双临街地块,发展潜力可观,详情欢迎垂询一点专家。',
+        image: 'media/prop-albany-2.jpg', agent: 'Rod Macfarlane', featured: 0, lat: -36.71873265, lng: 174.7018754 },
+      { title: 'Dairy Flat 庄园别墅', address: '65 Lascelles Drive, Dairy Flat', suburb: 'Dairy Flat', type: '别墅 / House',
+        price_label: '价格待询', beds: 4, baths: 3, garages: 3, land_area: '3.5ha',
+        description: '约 3.5 公顷私家庄园,四房三卫,静谧从容,尽享乡野与城市的平衡。',
+        image: 'media/prop-dairyflat.jpg', agent: 'Celia Wang', featured: 1, lat: -36.648685, lng: 174.647059 }
+    ];
+    const insProp = db.prepare(`INSERT INTO properties
+      (title,address,suburb,city,type,status,listing_kind,rent_period,price_label,beds,baths,garages,land_area,
+       description,images,floorplans,agent_id,featured,latitude,longitude)
+      VALUES (?,?,?,'Auckland',?,'在售','sale','week',?,?,?,?,?,?,?,'[]',?,?,?,?)`);
+    for (const p of PROPS) {
+      insProp.run(p.title, p.address, p.suburb, p.type, p.price_label, p.beds, p.baths, p.garages, p.land_area,
+        p.description, JSON.stringify([p.image]), agentId(p.agent), p.featured, p.lat, p.lng);
+    }
+    /* 房源带进来的地区要补进地区列表,否则筛选里挑不到 */
+    db.prepare(`INSERT OR IGNORE INTO suburbs (name, sort_order)
+      SELECT DISTINCT suburb, 999 FROM properties WHERE suburb != ''`).run();
+    console.log(`已写入 ${PROPS.length} 套在售房源`);
+  }
+}
+
 };
